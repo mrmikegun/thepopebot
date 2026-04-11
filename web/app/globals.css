@@ -128,7 +128,7 @@ body {
   word-break: break-word;
 }
 
-/* Thinking block shimmer — sweeps foreground highlight across muted text */
+/* Working indicator shimmer — sweeps light blue highlight across muted text */
 @keyframes thinking-shimmer {
   0% { background-position: 200% center; }
   100% { background-position: -200% center; }
@@ -138,7 +138,7 @@ body {
   background: linear-gradient(
     90deg,
     var(--muted-foreground) 0%,
-    var(--foreground) 50%,
+    hsl(0, 80%, 60%) 50%,
     var(--muted-foreground) 100%
   );
   background-size: 200% auto;
