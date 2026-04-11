@@ -71,7 +71,7 @@ jobs:
       - name: Reload (no version change)
         if: steps.pull.outputs.status == 'RELOAD'
         run: |
-          docker exec thepopebot-event-handler npx pm2 reload all
+          docker exec thepopebot-event-handler gosu coding-agent pm2 reload all
 
       - name: Pull new image and restart container
         if: steps.pull.outputs.status == 'VERSION_CHANGED'
