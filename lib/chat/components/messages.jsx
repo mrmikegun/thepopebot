@@ -38,7 +38,7 @@ export function Messages({ messages, status, onRetry, onEdit }) {
   return (
     <div className="relative flex-1">
       <div
-        className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-contain"
+        className="absolute inset-0 touch-pan-y overflow-y-auto"
         ref={containerRef}
       >
         <div className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 px-4 py-4 md:gap-6 md:px-6">
