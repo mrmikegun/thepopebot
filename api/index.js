@@ -3,7 +3,7 @@ import { createAgentJob } from '../lib/tools/create-agent-job.js';
 import { setWebhook } from '../lib/tools/telegram.js';
 import { getAgentJobStatus, fetchAgentJobLog } from '../lib/tools/github.js';
 import { getTelegramAdapter } from '../lib/channels/index.js';
-import { chat, summarizeAgentJob } from '../lib/ai/index.js';
+import { chat, chatStream, summarizeAgentJob } from '../lib/ai/index.js';
 import { createNotification } from '../lib/db/notifications.js';
 import { loadTriggers } from '../lib/triggers.js';
 import { verifyApiKey } from '../lib/db/api-keys.js';
@@ -211,19 +211,33 @@ async function handleTelegramWebhook(request) {
 /**
  * Process a normalized message through the AI layer with channel UX.
  * Message persistence is handled centrally by the AI layer.
+ *
+ * Uses chatStream() for progressive tool-call rendering when the adapter
+ * supports it (Telegram: sends each tool call as a message, reacts on completion).
+ * Falls back to chat() for adapters without streamChatResponse.
  */
 async function processChannelMessage(adapter, normalized) {
   await adapter.acknowledge(normalized.metadata);
   const stopIndicator = adapter.startProcessingIndicator(normalized.metadata);
 
   try {
-    const response = await chat(
-      normalized.threadId,
-      normalized.text,
-      normalized.attachments,
-      { userId: 'telegram', chatTitle: 'Telegram' }
-    );
-    await adapter.sendResponse(normalized.threadId, response, normalized.metadata);
+    if (adapter.streamChatResponse) {
+      const chunks = chatStream(
+        normalized.threadId,
+        normalized.text,
+        normalized.attachments,
+        { userId: 'telegram', chatTitle: 'Telegram' }
+      );
+      await adapter.streamChatResponse(normalized.metadata.chatId, chunks);
+    } else {
+      const response = await chat(
+        normalized.threadId,
+        normalized.text,
+        normalized.attachments,
+        { userId: 'telegram', chatTitle: 'Telegram' }
+      );
+      await adapter.sendResponse(normalized.threadId, response, normalized.metadata);
+    }
   } catch (err) {
     console.error('Failed to process message with AI:', err);
     await adapter
