@@ -225,7 +225,7 @@ export function WorkspaceBar({
         {branch && (
           <>
             <span className="shrink-0 text-muted-foreground/30 hidden md:inline">/</span>
-            <div className="shrink-0 max-w-[120px]">
+            <div className="min-w-0 max-w-[120px] md:max-w-[160px]">
               <Combobox
                 options={branches.map((b) => ({ value: b.name, label: b.name }))}
                 value={branch}

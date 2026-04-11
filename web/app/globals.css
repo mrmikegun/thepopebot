@@ -128,7 +128,7 @@ body {
   word-break: break-word;
 }
 
-/* Working indicator shimmer — sweeps an amber sun-flare band across muted text */
+/* Working indicator shimmer — sweeps a blue band across muted text */
 @keyframes thinking-shimmer {
   0% { background-position: 200% center; }
   100% { background-position: -200% center; }
@@ -144,9 +144,9 @@ body {
     90deg,
     var(--muted-foreground) 0%,
     var(--muted-foreground) 25%,
-    hsl(38, 90%, 55%) 42%,
-    hsl(45, 100%, 95%) 50%,
-    hsl(38, 90%, 55%) 58%,
+    hsl(215, 85%, 55%) 42%,
+    hsl(210, 100%, 82%) 50%,
+    hsl(215, 85%, 55%) 58%,
     var(--muted-foreground) 75%,
     var(--muted-foreground) 100%
   );
