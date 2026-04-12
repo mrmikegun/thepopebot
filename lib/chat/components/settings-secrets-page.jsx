@@ -3,7 +3,19 @@
 import { useState, useEffect } from 'react';
 import { KeyIcon, CopyIcon, CheckIcon, TrashIcon, PlusIcon } from './icons.js';
 import { SecretRow, EmptyState, formatDate, timeAgo } from './settings-shared.js';
-import { createNewApiKey, getApiKeys, deleteApiKey, getApiKeySettings, updateApiKeySetting, regenerateWebhookSecret } from '../actions.js';
+import {
+  createNewApiKey,
+  getApiKeys,
+  deleteApiKey,
+  getApiKeySettings,
+  updateApiKeySetting,
+  regenerateWebhookSecret,
+  getTelegramStatus,
+  validateTelegramToken,
+  registerTelegramWebhook,
+  startTelegramVerification,
+  cancelTelegramVerification,
+} from '../actions.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Keys sub-tab — Multiple named API keys
@@ -288,98 +300,348 @@ export function ApiKeysVoicePage() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Telegram sub-tab — Bot Token + Webhook Secret + Chat ID
+// Telegram sub-tab — Guided setup (bot token → webhook → chat verification)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function ApiKeysTelegramPage() {
-  const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [chatId, setChatId] = useState('');
-  const [savingChatId, setSavingChatId] = useState(false);
-  const [saving, setSaving] = useState(false);
+function StepIndicator({ n, state }) {
+  // state: 'done' | 'active' | 'pending'
+  const cls =
+    state === 'done'
+      ? 'bg-green-500 text-white border-green-500'
+      : state === 'active'
+        ? 'border-foreground text-foreground'
+        : 'border-border text-muted-foreground';
+  return (
+    <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium ${cls}`}>
+      {state === 'done' ? <CheckIcon className="h-3 w-3" /> : n}
+    </div>
+  );
+}
 
-  const loadSettings = async () => {
+export function ApiKeysTelegramPage() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Step 1 — bot token
+  const [tokenInput, setTokenInput] = useState('');
+  const [tokenEditing, setTokenEditing] = useState(false);
+  const [tokenSaving, setTokenSaving] = useState(false);
+  const [tokenError, setTokenError] = useState(null);
+
+  // Step 2 — webhook
+  const [webhookSaving, setWebhookSaving] = useState(false);
+  const [webhookError, setWebhookError] = useState(null);
+
+  // Step 3 — verification
+  const [verifying, setVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState(null);
+  const [verifyError, setVerifyError] = useState(null);
+
+  const loadStatus = async () => {
     try {
-      const result = await getApiKeySettings();
-      setSettings(result);
-      setChatId(result.telegramChatId || '');
-    } catch {
-      // ignore
+      const result = await getTelegramStatus();
+      setStatus(result);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadSettings();
+    loadStatus();
   }, []);
 
-  const getStatus = (key) => settings?.secrets?.find((s) => s.key === key)?.isSet || false;
-
-  const handleSave = async (key, value) => {
-    setSaving(true);
-    await updateApiKeySetting(key, value);
-    await loadSettings();
-    setSaving(false);
-  };
-
-  const handleRegenerate = async (key) => {
-    setSaving(true);
-    await regenerateWebhookSecret(key);
-    await loadSettings();
-    setSaving(false);
-  };
-
-  const handleSaveChatId = async () => {
-    setSavingChatId(true);
-    await updateApiKeySetting('TELEGRAM_CHAT_ID', chatId);
-    setSavingChatId(false);
-  };
+  // When a verification flow is active, poll for completion (chat ID gets saved by webhook)
+  useEffect(() => {
+    if (!verificationCode) return;
+    const interval = setInterval(async () => {
+      const result = await getTelegramStatus();
+      setStatus(result);
+      if (result.chatId) {
+        setVerificationCode(null);
+        setVerifying(false);
+        clearInterval(interval);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [verificationCode]);
 
   if (loading) {
-    return <div className="h-24 animate-pulse rounded-md bg-border/50" />;
+    return <div className="h-48 animate-pulse rounded-md bg-border/50" />;
   }
+
+  const step1Done = !!status.botInfo;
+  const step2Done = step1Done && status.webhookInfo?.url;
+  const step3Done = step2Done && !!status.chatId;
+
+  // Step 1 handlers
+  const handleSaveToken = async () => {
+    setTokenSaving(true);
+    setTokenError(null);
+    const validation = await validateTelegramToken(tokenInput.trim());
+    if (!validation.valid) {
+      setTokenError(validation.error || 'Invalid token');
+      setTokenSaving(false);
+      return;
+    }
+    const saveResult = await updateApiKeySetting('TELEGRAM_BOT_TOKEN', tokenInput.trim());
+    if (saveResult?.error) {
+      setTokenError(saveResult.error);
+      setTokenSaving(false);
+      return;
+    }
+    setTokenInput('');
+    setTokenEditing(false);
+    await loadStatus();
+    setTokenSaving(false);
+  };
+
+  const handleClearToken = async () => {
+    setTokenSaving(true);
+    await updateApiKeySetting('TELEGRAM_BOT_TOKEN', '');
+    await loadStatus();
+    setTokenSaving(false);
+  };
+
+  // Step 2 handlers
+  const handleRegisterWebhook = async () => {
+    setWebhookSaving(true);
+    setWebhookError(null);
+    const result = await registerTelegramWebhook();
+    if (result?.error) setWebhookError(result.error);
+    await loadStatus();
+    setWebhookSaving(false);
+  };
+
+  // Step 3 handlers
+  const handleStartVerification = async () => {
+    setVerifying(true);
+    setVerifyError(null);
+    const result = await startTelegramVerification();
+    if (result?.error) {
+      setVerifyError(result.error);
+      setVerifying(false);
+      return;
+    }
+    setVerificationCode(result.code);
+    await loadStatus();
+  };
+
+  const handleCancelVerification = async () => {
+    await cancelTelegramVerification();
+    setVerificationCode(null);
+    setVerifying(false);
+    await loadStatus();
+  };
+
+  const handleResetChatId = async () => {
+    await updateApiKeySetting('TELEGRAM_CHAT_ID', '');
+    await loadStatus();
+  };
 
   return (
     <div>
       <div className="mb-4">
         <h2 className="text-base font-medium">Telegram</h2>
-        <p className="text-sm text-muted-foreground">Connect a Telegram bot to receive and send messages through your agent.</p>
+        <p className="text-sm text-muted-foreground">
+          Connect a Telegram bot to receive and send messages through your agent.
+        </p>
       </div>
-      <div className="rounded-lg border bg-card p-4">
-        <div className="divide-y divide-border">
-          <SecretRow
-            label="Bot Token"
-            isSet={getStatus('TELEGRAM_BOT_TOKEN')}
-            saving={saving}
-            onSave={(val) => handleSave('TELEGRAM_BOT_TOKEN', val)}
-          />
-          <SecretRow
-            label="Webhook Secret"
-            isSet={getStatus('TELEGRAM_WEBHOOK_SECRET')}
-            saving={saving}
-            onSave={(val) => handleSave('TELEGRAM_WEBHOOK_SECRET', val)}
-            onRegenerate={() => handleRegenerate('TELEGRAM_WEBHOOK_SECRET')}
-          />
+
+      <div className="space-y-3">
+        {/* ─── Step 1: Bot Token ─── */}
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-start gap-3">
+            <StepIndicator n={1} state={step1Done ? 'done' : 'active'} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-medium">Bot Token</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Create a bot with{' '}
+                    <a
+                      href="https://t.me/BotFather"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-foreground"
+                    >
+                      @BotFather
+                    </a>{' '}
+                    and paste the token below.
+                  </p>
+                </div>
+                {step1Done && !tokenEditing && (
+                  <div className="shrink-0 text-right">
+                    <div className="text-sm font-medium">@{status.botInfo.username}</div>
+                    <button
+                      onClick={() => setTokenEditing(true)}
+                      className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {(!step1Done || tokenEditing) && (
+                <div className="mt-3 flex flex-col gap-2">
+                  <input
+                    type="password"
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    placeholder="123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+                    className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
+                    onKeyDown={(e) => e.key === 'Enter' && tokenInput.trim() && handleSaveToken()}
+                  />
+                  {tokenError && <div className="text-xs text-destructive">{tokenError}</div>}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSaveToken}
+                      disabled={tokenSaving || !tokenInput.trim()}
+                      className="rounded-md bg-foreground text-background px-2.5 py-1.5 text-xs font-medium hover:bg-foreground/90 disabled:opacity-50 transition-colors"
+                    >
+                      {tokenSaving ? 'Validating...' : 'Validate & Save'}
+                    </button>
+                    {tokenEditing && (
+                      <button
+                        onClick={() => {
+                          setTokenEditing(false);
+                          setTokenInput('');
+                          setTokenError(null);
+                        }}
+                        className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    {step1Done && tokenEditing && (
+                      <button
+                        onClick={handleClearToken}
+                        className="ml-auto rounded-md border border-destructive text-destructive px-2.5 py-1.5 text-xs font-medium hover:bg-destructive/10 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center pt-3 mt-3 border-t border-border">
-          <label className="text-sm font-medium shrink-0">Chat ID</label>
-          <div className="flex items-center gap-2 flex-1">
-            <input
-              type="text"
-              value={chatId}
-              onChange={(e) => setChatId(e.target.value)}
-              placeholder="123456789"
-              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
-              onKeyDown={(e) => e.key === 'Enter' && handleSaveChatId()}
-            />
-            <button
-              onClick={handleSaveChatId}
-              disabled={savingChatId}
-              className="rounded-md px-2.5 py-1.5 text-xs font-medium border border-border text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 transition-colors"
-            >
-              {savingChatId ? 'Saving...' : 'Save'}
-            </button>
+
+        {/* ─── Step 2: Webhook ─── */}
+        <div className={`rounded-lg border bg-card p-4 ${!step1Done ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className="flex items-start gap-3">
+            <StepIndicator n={2} state={step2Done ? 'done' : step1Done ? 'active' : 'pending'} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-medium">Webhook</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Register your public URL with Telegram so it can deliver messages to your bot.
+                  </p>
+                  {step2Done && (
+                    <div className="mt-2 text-xs text-muted-foreground truncate">
+                      <span className="font-mono">{status.webhookInfo.url}</span>
+                      {status.webhookInfo.pendingUpdates > 0 && (
+                        <span className="ml-2 text-yellow-500">
+                          ({status.webhookInfo.pendingUpdates} pending)
+                        </span>
+                      )}
+                      {status.webhookInfo.lastErrorMessage && (
+                        <div className="mt-1 text-destructive">
+                          Last error: {status.webhookInfo.lastErrorMessage}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3">
+                {webhookError && (
+                  <div className="text-xs text-destructive mb-2">{webhookError}</div>
+                )}
+                <button
+                  onClick={handleRegisterWebhook}
+                  disabled={!step1Done || webhookSaving}
+                  className="rounded-md bg-foreground text-background px-2.5 py-1.5 text-xs font-medium hover:bg-foreground/90 disabled:opacity-50 transition-colors"
+                >
+                  {webhookSaving
+                    ? 'Registering...'
+                    : step2Done
+                      ? 'Re-register Webhook'
+                      : 'Register Webhook'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Step 3: Chat Verification ─── */}
+        <div className={`rounded-lg border bg-card p-4 ${!step2Done ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className="flex items-start gap-3">
+            <StepIndicator n={3} state={step3Done ? 'done' : step2Done ? 'active' : 'pending'} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-medium">Link Your Chat</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Send a verification code to your bot on Telegram to link your personal chat.
+                  </p>
+                  {step3Done && (
+                    <div className="mt-2 text-sm font-mono text-muted-foreground">
+                      Chat ID: {status.chatId}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3">
+                {verifyError && (
+                  <div className="text-xs text-destructive mb-2">{verifyError}</div>
+                )}
+
+                {!step3Done && !verificationCode && (
+                  <button
+                    onClick={handleStartVerification}
+                    disabled={!step2Done || verifying}
+                    className="rounded-md bg-foreground text-background px-2.5 py-1.5 text-xs font-medium hover:bg-foreground/90 disabled:opacity-50 transition-colors"
+                  >
+                    {verifying ? 'Starting...' : 'Start Verification'}
+                  </button>
+                )}
+
+                {verificationCode && (
+                  <div className="rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Open Telegram, find @{status.botInfo?.username || 'your bot'}, and send this exact message:
+                    </div>
+                    <div className="font-mono text-sm bg-muted rounded px-2 py-1.5 mb-2 select-all">
+                      {verificationCode}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                      Waiting for message...
+                      <button
+                        onClick={handleCancelVerification}
+                        className="ml-auto underline hover:text-foreground transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {step3Done && (
+                  <button
+                    onClick={handleResetChatId}
+                    className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Re-verify
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
