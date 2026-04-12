@@ -523,7 +523,7 @@ export function ThinkingMessage() {
     <div className="flex gap-4 w-full justify-start">
       <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
         <SpinnerIcon size={14} />
-        <span>Thinking...</span>
+        <span className="thinking-shimmer">Waiting...</span>
       </div>
     </div>
   );
