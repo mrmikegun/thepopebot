@@ -26,7 +26,7 @@ Abstract interface for platform integrations. Methods:
 
 ## Telegram Adapter (telegram.js)
 
-- **Chat ID filtering**: `TELEGRAM_CHAT_ID` required. Messages from other chats are silently dropped. If not configured, all messages rejected.
-- **Verification flow**: If `TELEGRAM_VERIFICATION` env is set and user sends that code, bot responds with the chat ID (for initial setup).
+- **Authorization**: per-user via the `user_channels` table. Unverified chats only accept `/verify <code>`; all other messages are dropped. See `lib/db/user-channels.js` and `lib/channels/commands/verify.js`.
+- **Session commands**: post-auth messages may be slash commands (`/session`, `/session list`, `/session <id>`) dispatched from `lib/channels/commands/`. Resolution chat.id → userId → activeThreadId lives in `api/index.js` `processChannelMessage`.
 - **Webhook auth**: Validates `x-telegram-bot-api-secret-token` header against `TELEGRAM_WEBHOOK_SECRET`.
 - **Streaming**: `supportsStreaming` returns `false` — sends complete responses only.

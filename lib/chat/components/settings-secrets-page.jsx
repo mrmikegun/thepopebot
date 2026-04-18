@@ -13,8 +13,6 @@ import {
   getTelegramStatus,
   validateTelegramToken,
   registerTelegramWebhook,
-  startTelegramVerification,
-  cancelTelegramVerification,
 } from '../actions.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,11 +330,6 @@ export function ApiKeysTelegramPage() {
   const [webhookSaving, setWebhookSaving] = useState(false);
   const [webhookError, setWebhookError] = useState(null);
 
-  // Step 3 — verification
-  const [verifying, setVerifying] = useState(false);
-  const [verificationCode, setVerificationCode] = useState(null);
-  const [verifyError, setVerifyError] = useState(null);
-
   const loadStatus = async () => {
     try {
       const result = await getTelegramStatus();
@@ -350,28 +343,12 @@ export function ApiKeysTelegramPage() {
     loadStatus();
   }, []);
 
-  // When a verification flow is active, poll for completion (chat ID gets saved by webhook)
-  useEffect(() => {
-    if (!verificationCode) return;
-    const interval = setInterval(async () => {
-      const result = await getTelegramStatus();
-      setStatus(result);
-      if (result.chatId) {
-        setVerificationCode(null);
-        setVerifying(false);
-        clearInterval(interval);
-      }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [verificationCode]);
-
   if (loading) {
     return <div className="h-48 animate-pulse rounded-md bg-border/50" />;
   }
 
   const step1Done = !!status.botInfo;
   const step2Done = step1Done && status.webhookInfo?.url;
-  const step3Done = step2Done && !!status.chatId;
 
   // Step 1 handlers
   const handleSaveToken = async () => {
@@ -410,32 +387,6 @@ export function ApiKeysTelegramPage() {
     if (result?.error) setWebhookError(result.error);
     await loadStatus();
     setWebhookSaving(false);
-  };
-
-  // Step 3 handlers
-  const handleStartVerification = async () => {
-    setVerifying(true);
-    setVerifyError(null);
-    const result = await startTelegramVerification();
-    if (result?.error) {
-      setVerifyError(result.error);
-      setVerifying(false);
-      return;
-    }
-    setVerificationCode(result.code);
-    await loadStatus();
-  };
-
-  const handleCancelVerification = async () => {
-    await cancelTelegramVerification();
-    setVerificationCode(null);
-    setVerifying(false);
-    await loadStatus();
-  };
-
-  const handleResetChatId = async () => {
-    await updateApiKeySetting('TELEGRAM_CHAT_ID', '');
-    await loadStatus();
   };
 
   return (
@@ -577,73 +528,6 @@ export function ApiKeysTelegramPage() {
           </div>
         </div>
 
-        {/* ─── Step 3: Chat Verification ─── */}
-        <div className={`rounded-lg border bg-card p-4 ${!step2Done ? 'opacity-50 pointer-events-none' : ''}`}>
-          <div className="flex items-start gap-3">
-            <StepIndicator n={3} state={step3Done ? 'done' : step2Done ? 'active' : 'pending'} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="text-sm font-medium">Link Your Chat</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Send a verification code to your bot on Telegram to link your personal chat.
-                  </p>
-                  {step3Done && (
-                    <div className="mt-2 text-sm font-mono text-muted-foreground">
-                      Chat ID: {status.chatId}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-3">
-                {verifyError && (
-                  <div className="text-xs text-destructive mb-2">{verifyError}</div>
-                )}
-
-                {!step3Done && !verificationCode && (
-                  <button
-                    onClick={handleStartVerification}
-                    disabled={!step2Done || verifying}
-                    className="rounded-md bg-foreground text-background px-2.5 py-1.5 text-xs font-medium hover:bg-foreground/90 disabled:opacity-50 transition-colors"
-                  >
-                    {verifying ? 'Starting...' : 'Start Verification'}
-                  </button>
-                )}
-
-                {verificationCode && (
-                  <div className="rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
-                    <div className="text-xs text-muted-foreground mb-2">
-                      Open Telegram, find @{status.botInfo?.username || 'your bot'}, and send this exact message:
-                    </div>
-                    <div className="font-mono text-sm bg-muted rounded px-2 py-1.5 mb-2 select-all">
-                      {verificationCode}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-                      Waiting for message...
-                      <button
-                        onClick={handleCancelVerification}
-                        className="ml-auto underline hover:text-foreground transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {step3Done && (
-                  <button
-                    onClick={handleResetChatId}
-                    className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Re-verify
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

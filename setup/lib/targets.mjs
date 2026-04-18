@@ -31,8 +31,6 @@ export const CONFIG_TARGETS = {
   LLM_MODEL:             { db: true, variable: true },
   CUSTOM_OPENAI_BASE_URL: { db: true, variable: true },
   AGENT_BACKEND:         { db: true, variable: true },
-  TELEGRAM_CHAT_ID:      { db: true },
-  TELEGRAM_VERIFICATION: { db: true },
 
   // Infrastructure → .env only (needed before DB is available)
   GH_OWNER:              { env: true },

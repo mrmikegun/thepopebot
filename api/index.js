@@ -1,8 +1,10 @@
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual, randomUUID } from 'crypto';
 import { createAgentJob } from '../lib/tools/create-agent-job.js';
 import { setWebhook } from '../lib/tools/telegram.js';
 import { getAgentJobStatus, fetchAgentJobLog } from '../lib/tools/github.js';
 import { getTelegramAdapter } from '../lib/channels/index.js';
+import { dispatchCommand, dispatchPreAuthCommand } from '../lib/channels/commands/index.js';
+import { getByChannelChatId, setActiveThread } from '../lib/db/user-channels.js';
 import { chat, chatStream, summarizeAgentJob } from '../lib/ai/index.js';
 import { createNotification } from '../lib/db/notifications.js';
 import { loadTriggers } from '../lib/triggers.js';
@@ -209,43 +211,65 @@ async function handleTelegramWebhook(request) {
 }
 
 /**
- * Process a normalized message through the AI layer with channel UX.
- * Message persistence is handled centrally by the AI layer.
- *
- * Uses chatStream() for progressive tool-call rendering when the adapter
- * supports it (Telegram: sends each tool call as a message, reacts on completion).
- * Falls back to chat() for adapters without streamChatResponse.
+ * Resolve the incoming channel message to a user, dispatch any slash command,
+ * and otherwise stream the message through the AI layer using the user's
+ * active session.
  */
 async function processChannelMessage(adapter, normalized) {
-  await adapter.acknowledge(normalized.metadata);
-  const stopIndicator = adapter.startProcessingIndicator(normalized.metadata);
+  const { channel, channelChatId, metadata } = normalized;
+  const binding = getByChannelChatId(channel, channelChatId);
+
+  // Unbound chat → only /verify is accepted; everything else is silently ignored.
+  if (!binding || !binding.verifiedAt) {
+    const result = await dispatchPreAuthCommand(normalized, { channel, channelChatId });
+    if (result?.handled) {
+      await adapter.sendResponse(channelChatId, result.reply, metadata);
+    }
+    return;
+  }
+
+  const ctx = { channel, channelChatId, userId: binding.userId };
+
+  // Post-auth slash commands short-circuit the AI path.
+  const cmd = await dispatchCommand(normalized, ctx);
+  if (cmd?.handled) {
+    await adapter.sendResponse(channelChatId, cmd.reply, metadata);
+    return;
+  }
+
+  await adapter.acknowledge(metadata);
+  const stopIndicator = adapter.startProcessingIndicator(metadata);
 
   try {
+    let threadId = binding.activeThreadId;
+    if (!threadId) {
+      threadId = randomUUID();
+      setActiveThread(binding.userId, channel, threadId);
+    }
+
+    const envRepo = process.env.GH_OWNER && process.env.GH_REPO
+      ? `${process.env.GH_OWNER}/${process.env.GH_REPO}`
+      : '';
+    const streamOptions = {
+      userId: binding.userId,
+      chatTitle: 'Telegram',
+      repo: envRepo,
+      branch: 'main',
+      codeMode: false,
+      codeModeType: 'code',
+    };
+
     if (adapter.streamChatResponse) {
-      const chunks = chatStream(
-        normalized.threadId,
-        normalized.text,
-        normalized.attachments,
-        { userId: 'telegram', chatTitle: 'Telegram' }
-      );
-      await adapter.streamChatResponse(normalized.metadata.chatId, chunks);
+      const chunks = chatStream(threadId, normalized.text, normalized.attachments, streamOptions);
+      await adapter.streamChatResponse(channelChatId, chunks);
     } else {
-      const response = await chat(
-        normalized.threadId,
-        normalized.text,
-        normalized.attachments,
-        { userId: 'telegram', chatTitle: 'Telegram' }
-      );
-      await adapter.sendResponse(normalized.threadId, response, normalized.metadata);
+      const response = await chat(threadId, normalized.text, normalized.attachments, streamOptions);
+      await adapter.sendResponse(channelChatId, response, metadata);
     }
   } catch (err) {
     console.error('Failed to process message with AI:', err);
     await adapter
-      .sendResponse(
-        normalized.threadId,
-        'Sorry, I encountered an error processing your message.',
-        normalized.metadata
-      )
+      .sendResponse(channelChatId, 'Sorry, I encountered an error processing your message.', metadata)
       .catch(() => {});
   } finally {
     stopIndicator();

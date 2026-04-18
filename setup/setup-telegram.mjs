@@ -5,10 +5,9 @@ import * as clack from '@clack/prompts';
 
 import { checkPrerequisites } from './lib/prerequisites.mjs';
 import { setVariables, setSecrets } from './lib/github.mjs';
-import { setTelegramWebhook, validateBotToken, generateVerificationCode, getBotFatherURL } from './lib/telegram.mjs';
+import { setTelegramWebhook, validateBotToken, getBotFatherURL } from './lib/telegram.mjs';
 import { confirm, keepOrReconfigure, generateTelegramWebhookSecret, promptForOptionalKey, maskSecret, openOrShowURL } from './lib/prompts.mjs';
 import { updateEnvVariable } from './lib/auth.mjs';
-import { runVerificationFlow } from './lib/telegram-verify.mjs';
 import { loadEnvFile } from './lib/env.mjs';
 
 const logo = `
@@ -25,13 +24,12 @@ async function main() {
   clack.intro('Telegram Setup');
   clack.log.info('Connect a Telegram bot to your agent. This wizard will walk you through creating a bot, registering a webhook, and linking your chat.');
 
-  const TOTAL_STEPS = 6;
+  const TOTAL_STEPS = 5;
   let currentStep = 0;
 
   // Track values for summary
   let botUsername = null;
   let webhookUrl = null;
-  let telegramChatId = null;
 
   // ─── Step 1: Prerequisites ──────────────────────────────────────────
   clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Checking prerequisites`);
@@ -198,35 +196,7 @@ async function main() {
     tgSpinner.stop(`Failed: ${tgResult.description}`);
   }
 
-  // ─── Step 5: Chat Verification ──────────────────────────────────────
-  clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Chat Verification`);
-  clack.log.info('Link the bot to your Telegram chat so it only responds to you.');
-
-  telegramChatId = env?.TELEGRAM_CHAT_ID || null;
-
-  if (await keepOrReconfigure('Chat ID', telegramChatId)) {
-    // Keep existing — already set
-  } else {
-    telegramChatId = null;
-    const verificationCode = generateVerificationCode();
-    updateEnvVariable('TELEGRAM_VERIFICATION', verificationCode);
-
-    clack.log.warn('Waiting for server to restart with new verification code...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    const chatId = await runVerificationFlow(verificationCode, { allowSkip: true });
-
-    if (chatId) {
-      telegramChatId = chatId;
-      updateEnvVariable('TELEGRAM_CHAT_ID', chatId);
-      clack.log.success(`Chat ID saved: ${chatId}`);
-    } else {
-      clack.log.warn('Chat ID is required — the bot will not respond without it.');
-      clack.log.info('Run npm run setup-telegram again to complete setup.');
-    }
-  }
-
-  // ─── Step 6: Optional Keys ──────────────────────────────────────────
+  // ─── Step 5: Optional Keys ──────────────────────────────────────────
   clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Optional Keys`);
   clack.log.info('An OpenAI API key enables voice message transcription via Whisper.');
 
@@ -247,11 +217,10 @@ async function main() {
   // ─── Summary ────────────────────────────────────────────────────────
   let summary = '';
   summary += `Bot:       @${botUsername || '(unknown)'}\n`;
-  summary += `Webhook:   ${webhookUrl}\n`;
-  summary += `Chat ID:   ${telegramChatId || '(not set)'}`;
+  summary += `Webhook:   ${webhookUrl}`;
   clack.note(summary, 'Telegram Configuration');
 
-  clack.outro('Telegram setup complete!');
+  clack.outro('Telegram setup complete! Link your personal chat at /profile/telegram.');
 }
 
 main().catch((error) => {

@@ -55,6 +55,6 @@ When your tunnel is active, the following endpoints are reachable from the inter
 - **Always set webhook secrets** — Configure `TELEGRAM_WEBHOOK_SECRET` and `GH_WEBHOOK_SECRET` in your `.env`, even for local development. Without them, webhook endpoints reject all requests by default, but setting explicit secrets adds an extra layer of validation.
 - **Always set API keys** — Generate an API key through the web UI before exposing your server. Without a valid key, `/api/create-agent-job` requests are rejected.
 - **Stop tunnels when not in use** — Close ngrok or your tunnel when you're done developing. Don't leave endpoints exposed overnight.
-- **Restrict Telegram to your chat** — Set `TELEGRAM_CHAT_ID` in your `.env` to your personal chat ID. This ensures the bot only responds to messages from your chat, ignoring messages from anyone else who discovers the bot.
+- **Link your personal Telegram chat** — Open `/profile/telegram`, generate a verification code, and send `/verify <code>` to your bot. The bot only responds to verified users; unbound chats are silently dropped. Each user links their own chat.
 - **Use docker-compose with TLS for production** — For anything beyond local testing, deploy with `docker compose up` and enable Let's Encrypt TLS. See the [Production Deployment](../README.md#production-deployment) section in the README.
 - **Review auto-merge settings** — Keep `ALLOWED_PATHS` restrictive (default `/logs`). Only widen it after reviewing what your agent might change.

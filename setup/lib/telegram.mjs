@@ -5,7 +5,6 @@ export {
   setTelegramWebhook,
   getTelegramWebhookInfo,
   deleteTelegramWebhook,
-  generateVerificationCode,
 } from '../../lib/tools/telegram.js';
 
 /**

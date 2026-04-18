@@ -59,7 +59,7 @@ Stored encrypted (AES-256-GCM) in SQLite, managed via the admin UI:
 
 Stored as plaintext in SQLite, managed via the admin UI:
 
-`LLM_PROVIDER` (default: `anthropic`), `LLM_MODEL` (auto from provider), `LLM_MAX_TOKENS` (default: `4096`), `AGENT_BACKEND`, `CUSTOM_OPENAI_BASE_URL`, `TELEGRAM_CHAT_ID`, `UPGRADE_INCLUDE_BETA` (default: `false`), `CODING_AGENT` (default: `claude-code`), plus `CODING_AGENT_*` keys for the 5 agent backends.
+`LLM_PROVIDER` (default: `anthropic`), `LLM_MODEL` (auto from provider), `LLM_MAX_TOKENS` (default: `4096`), `AGENT_BACKEND`, `CUSTOM_OPENAI_BASE_URL`, `UPGRADE_INCLUDE_BETA` (default: `false`), `CODING_AGENT` (default: `claude-code`), plus `CODING_AGENT_*` keys for the 5 agent backends.
 
 ---
 

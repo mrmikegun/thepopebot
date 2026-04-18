@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { PageLayout } from './page-layout.js';
-import { KeyIcon } from './icons.js';
+import { KeyIcon, SendIcon, CopyIcon, CheckIcon } from './icons.js';
 import { updateProfile } from '../../auth/actions.js';
+import {
+  issueTelegramCode,
+  unlinkTelegramChannel,
+} from '../actions.js';
 
 const TABS = [
   { id: 'login', label: 'Login', href: '/profile/login', icon: KeyIcon },
+  { id: 'telegram', label: 'Telegram', href: '/profile/telegram', icon: SendIcon },
 ];
 
 export function ProfileLayout({ session, children }) {
@@ -164,5 +169,195 @@ export function ProfileLoginPage({ session }) {
         {saving ? 'Saving...' : 'Save changes'}
       </button>
     </form>
+  );
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return 'expired';
+  const total = Math.ceil(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Telegram linking UI. Initial state is server-rendered (passed via `initial`);
+ * mutations use server actions, which return the new state.
+ */
+export function ProfileTelegramPage({ initial }) {
+  const [state, setState] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (state.status !== 'pending') return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [state.status]);
+
+  const handleIssue = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await issueTelegramCode();
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setState({
+          status: 'pending',
+          code: result.code,
+          expiresAt: result.expiresAt,
+          botUsername: result.botUsername ?? state.botUsername,
+        });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleUnlink = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await unlinkTelegramChannel();
+      setState({ status: 'unlinked', botUsername: state.botUsername });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!state.code) return;
+    try {
+      await navigator.clipboard.writeText(`/verify ${state.code}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const botLink = state.botUsername
+    ? `https://t.me/${state.botUsername}`
+    : null;
+
+  return (
+    <div className="max-w-md space-y-6">
+      <div>
+        <h2 className="text-base font-medium">Telegram</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Link a Telegram chat to your account to talk to the bot from your phone.
+        </p>
+      </div>
+
+      {!state.botUsername && (
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 text-sm text-yellow-500">
+          Telegram bot token is not configured. An admin needs to set
+          <code className="mx-1 px-1 rounded bg-muted text-foreground">TELEGRAM_BOT_TOKEN</code>
+          before users can link their chat.
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {state.status === 'unlinked' && (
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+            <span className="text-muted-foreground">Not linked</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleIssue}
+            disabled={busy || !state.botUsername}
+            className="rounded-md px-3 py-1.5 text-sm bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-colors"
+          >
+            {busy ? 'Generating...' : 'Generate code'}
+          </button>
+        </div>
+      )}
+
+      {state.status === 'pending' && (
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+            <span className="text-muted-foreground">
+              Waiting for verification — expires in {formatCountdown(state.expiresAt - now)}
+            </span>
+          </div>
+
+          <ol className="text-sm space-y-2 text-muted-foreground list-decimal list-inside">
+            <li>
+              Open{' '}
+              {botLink ? (
+                <a className="text-foreground underline" href={botLink} target="_blank" rel="noreferrer">
+                  @{state.botUsername}
+                </a>
+              ) : (
+                <span className="text-foreground">the bot</span>
+              )}{' '}
+              on Telegram.
+            </li>
+            <li>
+              Send this message:
+              <div className="mt-2 flex items-center gap-2">
+                <code className="flex-1 rounded-md bg-muted px-3 py-2 text-xs text-foreground font-mono">
+                  /verify {state.code}
+                </code>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  {copied ? <><CheckIcon size={12} /> Copied</> : <><CopyIcon size={12} /> Copy</>}
+                </button>
+              </div>
+            </li>
+          </ol>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleIssue}
+              disabled={busy}
+              className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 transition-colors"
+            >
+              {busy ? 'Regenerating...' : 'Regenerate'}
+            </button>
+            <button
+              type="button"
+              onClick={handleUnlink}
+              disabled={busy}
+              className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {state.status === 'verified' && (
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="text-muted-foreground">
+              Linked to Telegram chat <code className="text-foreground">{state.channelChatId}</code>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleUnlink}
+            disabled={busy}
+            className="rounded-md border border-destructive px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
+          >
+            {busy ? 'Unlinking...' : 'Unlink'}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
