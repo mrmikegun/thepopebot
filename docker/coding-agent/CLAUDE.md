@@ -103,7 +103,6 @@ Called once per container startup, after auth. Configure the agent so it runs no
 **Required responsibilities:**
 - Write trust/permission config so the agent doesn't prompt interactively
 - Write system prompt if `$SYSTEM_PROMPT` is set (clear it if empty)
-- Register Playwright MCP server for browser automation
 - Install session tracking mechanism (see Session Tracking below)
 
 **Optional:**
@@ -426,15 +425,6 @@ When an agent scope is set (e.g., `agents/gary-vee`), `buildCodingAgentSystemPro
 | gemini-cli | Copied to `~/.gemini/SYSTEM.md` + `GEMINI_SYSTEM_MD` env var |
 | kimi-cli | Copied to `AGENTS.md` in workspace root |
 
-## MCP Server Registration
+## Browser Automation
 
-Every agent should register Playwright MCP for browser automation. Method varies:
-
-| Agent | Method |
-|-------|--------|
-| claude-code | `claude mcp add --transport stdio playwright -- npx -y @playwright/mcp@0.0.70 --headless --browser chromium` |
-| pi-coding-agent | `playwright-cli` skill available in `skills/` (Pi reads via `.pi/skills` bridge) |
-| opencode | JSON config in `~/.config/opencode/opencode.json` (`mcp.playwright` field) |
-| codex-cli | TOML config in `~/.codex/config.toml` (`[mcp_servers.playwright]`) |
-| gemini-cli | `gemini mcp add playwright npx -y @playwright/mcp@0.0.70 --headless --browser chromium --trust` |
-| kimi-cli | `kimi mcp add --transport stdio -e PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers playwright -- npx -y @playwright/mcp@0.0.70 --headless --browser chromium` |
+All agents get browser automation via the `playwright-cli` skill in `skills/`. The skill is available to every agent through the skill bridge symlinks (`.claude/skills`, `.pi/skills`, etc. → `../skills/`). The `{{skills}}` template variable resolves the skill description into each agent's system prompt. No per-agent MCP registration needed.

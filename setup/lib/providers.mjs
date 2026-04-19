@@ -14,7 +14,8 @@ export const PROVIDERS = {
     builtin: true,
     oauthSupported: true,
     models: [
-      { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', default: true },
+      { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', default: true },
+      { id: 'claude-opus-4-6', name: 'Claude Opus 4.6' },
       { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5' },
     ],

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Codex CLI setup — config, system prompt, session tracking hook, Playwright MCP
+# Codex CLI setup — config, system prompt, session tracking hook
 
 # System prompt: read from /home/coding-agent/SYSTEM.md (written by EH or 5_build-prompt.sh)
 SYSTEM_PROMPT=""
@@ -27,11 +27,6 @@ codex_hooks = true
 
 [projects."${WORKSPACE_DIR}"]
 trust_level = "trusted"
-
-[mcp_servers.playwright]
-command = "npx"
-args = ["-y", "@playwright/mcp@0.0.70", "--headless", "--browser", "chromium", "--output-dir", "/home/coding-agent/workspace/.tmp"]
-env = { PLAYWRIGHT_BROWSERS_PATH = "/opt/pw-browsers" }
 EOF
 
 # Write the session tracking hook script (run on every SessionStart)

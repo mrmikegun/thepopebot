@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Code setup — trust config, onboarding skip, Playwright MCP
+# Claude Code setup — trust config, onboarding skip
 
 # System prompt: /home/coding-agent/SYSTEM.md is written to the volume by the EH
 # (interactive/headless) or read from agent-job.config.json by 5_build-prompt.sh (agent-job).
@@ -61,6 +61,3 @@ cat > ~/.claude.json << ENDJSON
   }
 }
 ENDJSON
-
-# Register Playwright MCP server for browser automation
-claude mcp add --transport stdio playwright -- npx -y @playwright/mcp@0.0.70 --headless --browser chromium --output-dir /home/coding-agent/workspace/.tmp

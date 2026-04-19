@@ -1,5 +1,5 @@
 #!/bin/bash
-# Gemini CLI setup — trust, auth config, session tracking hook, system prompt, Playwright MCP
+# Gemini CLI setup — trust, auth config, session tracking hook, system prompt
 
 # System prompt: read from /home/coding-agent/SYSTEM.md (written by EH or 5_build-prompt.sh)
 SYSTEM_PROMPT=""
@@ -91,6 +91,3 @@ if [ -n "$SYSTEM_PROMPT" ]; then
 else
     rm -f ~/.gemini/SYSTEM.md
 fi
-
-# ── Register Playwright MCP server for browser automation ──
-gemini mcp add playwright npx -y @playwright/mcp@0.0.70 --headless --browser chromium --output-dir /home/coding-agent/workspace/.tmp --trust 2>&1 || true

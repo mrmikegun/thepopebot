@@ -1,5 +1,5 @@
 #!/bin/bash
-# Kimi CLI setup — session tracking hook, system prompt, Playwright MCP
+# Kimi CLI setup — session tracking hook, system prompt
 
 # System prompt: read from /home/coding-agent/SYSTEM.md (written by EH or 5_build-prompt.sh)
 SYSTEM_PROMPT=""
@@ -93,6 +93,3 @@ event = "SessionStart"
 command = "bash /home/coding-agent/.kimi-ttyd-sessions-hook.sh"
 timeout = 5
 TOML
-
-# Register Playwright MCP server for browser automation
-kimi mcp add --transport stdio -e PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers playwright -- npx -y @playwright/mcp@0.0.70 --headless --browser chromium --output-dir /home/coding-agent/workspace/.tmp 2>/dev/null || true

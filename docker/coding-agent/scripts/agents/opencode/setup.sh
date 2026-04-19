@@ -1,5 +1,5 @@
 #!/bin/bash
-# OpenCode setup — session tracking plugin, system prompt, Playwright MCP
+# OpenCode setup — session tracking plugin, system prompt
 
 # System prompt: read from /home/coding-agent/SYSTEM.md (written by EH or 5_build-prompt.sh)
 SYSTEM_PROMPT=""
@@ -55,19 +55,5 @@ PLUGIN
 cat > "${WORKSPACE_DIR}/.opencode/opencode.jsonc" << 'EOF'
 {
   "plugin": ["./plugins"]
-}
-EOF
-
-# Register Playwright MCP server for browser automation
-mkdir -p ~/.config/opencode
-cat > ~/.config/opencode/opencode.json << 'EOF'
-{
-  "mcp": {
-    "playwright": {
-      "type": "local",
-      "command": ["npx", "-y", "@playwright/mcp@0.0.70", "--headless", "--browser", "chromium", "--output-dir", "/home/coding-agent/workspace/.tmp"],
-      "enabled": true
-    }
-  }
 }
 EOF
