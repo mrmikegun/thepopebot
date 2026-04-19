@@ -89,7 +89,7 @@ RUN npm install -g @playwright/cli@0.1.3 \
 # Config sets chromium browser, headless, and routes artifacts to /tmp
 # (outside workspace) to avoid git pollution.
 RUN mkdir -p /etc/playwright \
-    && echo '{"browser":{"browserName":"chromium","launchOptions":{"headless":true}},"outputDir":"/tmp"}' \
+    && echo '{"browser":{"browserName":"chromium","launchOptions":{"headless":true,"args":["--no-sandbox"]}},"outputDir":"/tmp"}' \
        > /etc/playwright/cli.config.json
 ENV PLAYWRIGHT_MCP_CONFIG=/etc/playwright/cli.config.json
 
