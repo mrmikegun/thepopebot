@@ -3,11 +3,6 @@
 
 cd /home/coding-agent/workspace
 
-# Override SYSTEM_PROMPT with the built file content for agents that use inline prompt
-if [ -f "$SYSTEM_PROMPT_FILE" ]; then
-    export SYSTEM_PROMPT=$(cat "$SYSTEM_PROMPT_FILE")
-fi
-
 # Force full permissions for job runtime
 export PERMISSION=code
 

@@ -1,13 +1,9 @@
 #!/bin/bash
 # Claude Code setup — trust config, onboarding skip, Playwright MCP
 
-# Prefer pre-rendered system prompt from event handler (written to volume)
-if [ -f /home/coding-agent/SYSTEM.md ]; then
-    SYSTEM_PROMPT=$(cat /home/coding-agent/SYSTEM.md)
-    export SYSTEM_PROMPT
-else
-    source /scripts/common/build-system-prompt.sh
-fi
+# System prompt: /home/coding-agent/SYSTEM.md is written to the volume by the EH
+# (interactive/headless) or read from agent-job.config.json by 5_build-prompt.sh (agent-job).
+# run.sh/interactive.sh read it via --append-system-prompt-file.
 
 WORKSPACE_DIR=$(pwd)
 

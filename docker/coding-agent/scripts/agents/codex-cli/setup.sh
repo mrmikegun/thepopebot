@@ -1,12 +1,10 @@
 #!/bin/bash
 # Codex CLI setup — config, system prompt, session tracking hook, Playwright MCP
 
-# Prefer pre-rendered system prompt from event handler (written to volume)
+# System prompt: read from /home/coding-agent/SYSTEM.md (written by EH or 5_build-prompt.sh)
+SYSTEM_PROMPT=""
 if [ -f /home/coding-agent/SYSTEM.md ]; then
     SYSTEM_PROMPT=$(cat /home/coding-agent/SYSTEM.md)
-    export SYSTEM_PROMPT
-else
-    source /scripts/common/build-system-prompt.sh
 fi
 
 WORKSPACE_DIR=$(pwd)

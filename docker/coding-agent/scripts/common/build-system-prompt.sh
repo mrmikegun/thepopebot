@@ -14,5 +14,6 @@ if [ -n "$AGENT_JOB_TOKEN" ]; then
     # Resolve {{datetime}} template variable
     SYSTEM_PROMPT=$(echo "$SYSTEM_PROMPT" | sed "s/{{datetime}}/$(date -u +"%Y-%m-%dT%H:%M:%SZ")/g")
 
-    export SYSTEM_PROMPT
+    # Write to file so run.sh/interactive.sh can use --append-system-prompt-file
+    echo "$SYSTEM_PROMPT" > /home/coding-agent/SYSTEM.md
 fi

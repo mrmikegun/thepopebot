@@ -1,0 +1,1 @@
+ALTER TABLE `code_workspaces` ADD `scope` text;
