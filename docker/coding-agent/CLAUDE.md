@@ -413,9 +413,9 @@ Mount at `/home/coding-agent` (not `/home/coding-agent/workspace`) so both works
 
 ## System Prompt Handling
 
-The event handler pre-renders the system prompt (via `buildCodingAgentSystemPrompt()`) and writes it to `/home/coding-agent/SYSTEM.md` on the volume before the container starts. Each agent's `setup.sh` reads this file and distributes it to where the agent expects it.
+The event handler pre-renders the system prompt (via `buildCodingAgentSystemPrompt()`) with full template resolution ({{skills}}, {{datetime}}, includes). For interactive/headless containers, it writes to `/home/coding-agent/SYSTEM.md` on the bind-mount volume. For agent-job containers (named volumes), the pre-rendered prompt is stored in `agent-job.config.json` and written to `/home/coding-agent/SYSTEM.md` by `5_build-prompt.sh` after clone. Each agent's `setup.sh` reads the file and distributes it to where the agent expects it.
 
-For **agent-job containers** (which use named volumes the EH can't write to), `setup.sh` falls back to `build-system-prompt.sh` which reads `agent-job/SYSTEM.md` from the cloned workspace.
+When an agent scope is set (e.g., `agents/gary-vee`), `buildCodingAgentSystemPrompt()` checks for `agents/gary-vee/SYSTEM.md` first, falling back to `agent-job/SYSTEM.md`.
 
 | Agent | Method |
 |-------|--------|
