@@ -78,11 +78,20 @@ RUN useradd -m -s /bin/bash -u 1001 coding-agent \
     && chown coding-agent:coding-agent /home/coding-agent/workspace
 
 # ──────────────────────────────────────────────
-# Playwright Chrome for Testing (pre-installed for MCP)
+# playwright-cli + Chromium (used by playwright-cli skill across all agents)
 # ──────────────────────────────────────────────
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
-RUN npx -y @playwright/mcp@0.0.70 install-browser chrome-for-testing \
+RUN npm install -g @playwright/cli@0.1.3 \
+    && npx playwright install chromium \
     && chown -R coding-agent:coding-agent /opt/pw-browsers
+
+# Bake default config so `playwright-cli open` works with zero flags.
+# Config sets chromium browser, headless, and routes artifacts to /tmp
+# (outside workspace) to avoid git pollution.
+RUN mkdir -p /etc/playwright \
+    && echo '{"browser":{"browserName":"chromium","launchOptions":{"headless":true}},"outputDir":"/tmp"}' \
+       > /etc/playwright/cli.config.json
+ENV PLAYWRIGHT_MCP_CONFIG=/etc/playwright/cli.config.json
 
 # ──────────────────────────────────────────────
 # Copy scripts, commands, and configs
