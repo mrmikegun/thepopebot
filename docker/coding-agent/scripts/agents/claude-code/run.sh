@@ -12,8 +12,6 @@ fi
 
 if [ -f /home/coding-agent/SYSTEM.md ]; then
     CLAUDE_ARGS+=(--append-system-prompt-file /home/coding-agent/SYSTEM.md)
-elif [ -n "$SYSTEM_PROMPT" ]; then
-    CLAUDE_ARGS+=(--append-system-prompt "$SYSTEM_PROMPT")
 fi
 
 if [ "$PERMISSION" = "plan" ]; then

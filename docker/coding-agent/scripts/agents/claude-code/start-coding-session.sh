@@ -15,9 +15,12 @@ if [ -n "$LLM_MODEL" ]; then
     CLAUDE_ARGS+=(--model "$LLM_MODEL")
 fi
 
+# Encode cwd the same way Claude Code does (non-alphanumeric → '-')
+ENCODED_CWD=$(echo "$WORK_DIR" | sed 's/[^a-zA-Z0-9]/-/g')
+
 if [ -f "$SESSION_FILE" ]; then
     SESSION_ID=$(cat "$SESSION_FILE")
-    if [ -f "/home/coding-agent/.claude/projects/-home-coding-agent-workspace/${SESSION_ID}.jsonl" ]; then
+    if [ -f "/home/coding-agent/.claude/projects/${ENCODED_CWD}/${SESSION_ID}.jsonl" ]; then
         CLAUDE_ARGS+=(--resume "$SESSION_ID")
     fi
 fi
