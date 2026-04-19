@@ -35,9 +35,16 @@ Everything in the workspace is automatically committed and pushed when your job 
 - `docker-compose.yml`, `.dockerignore`, `.gitignore` — Managed infrastructure files
 - `.env` — Environment secrets
 
+## Agent Scoping
+
+Agents can be scoped to subdirectories under `agents/`. When scoped, the agent's working directory is set to that subdirectory (e.g., `agents/gary-vee/`). The full repo is still accessible.
+
+- **Skills fallback** — If the scoped directory has a `skills/` folder, those are used. Otherwise, the root `skills/` folder applies. Sub-agents can symlink individual skills from root: `skills/agent-job-secrets → ../../../skills/agent-job-secrets`.
+- **No skills folder needed** — If you don't create a `skills/` directory in the agent scope, it inherits all root skills automatically.
+
 ## Self-Modification
 
-**Add an agent** — Create `agents/<name>/` with a `jobs/` subfolder, add a cron entry in `agent-job/CRONS.json` pointing to the prompt file, update `agents/CLAUDE.md` to document it, update root `CLAUDE.md` to reflect the new agent.
+**Add an agent** — Create `agents/<name>/` with an optional `CLAUDE.md`, `SYSTEM.md`, and `skills/` directory. Add a cron entry in `agent-job/CRONS.json` if it runs on a schedule. Update `agents/CLAUDE.md` and root `CLAUDE.md`.
 
 **Remove an agent** — Delete the `agents/<name>/` folder, remove its cron entries, update `agents/CLAUDE.md` and root `CLAUDE.md`.
 

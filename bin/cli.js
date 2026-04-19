@@ -86,12 +86,12 @@ function getTemplateFiles(templatesDir) {
   return files;
 }
 
-async function init() {
+async function init(options = {}) {
   let cwd = process.cwd();
   const packageDir = path.join(__dirname, '..');
   const templatesDir = path.join(packageDir, 'templates');
-  const noManaged = args.includes('--no-managed');
-  const noInstall = args.includes('--no-install');
+  const noManaged = options.noManaged ?? args.includes('--no-managed');
+  const noInstall = options.noInstall ?? args.includes('--no-install');
 
   // Guard: warn if the directory is not empty (unless it's an existing thepopebot project)
   const entries = fs.readdirSync(cwd);
@@ -646,6 +646,9 @@ const PROTECTED_PATHS = [
   'package.json',
   'docker-compose.custom.yml',
   '.claude/',
+  '.codex/',
+  '.gemini/',
+  '.kimi/',
   '.pi/',
   'skills/',
   'node_modules/',
@@ -739,10 +742,10 @@ async function resetAll() {
 
   console.log(`\n  Moved ${filesToMove.length} file(s) to .backups/${ts}/`);
 
-  // Run init to rebuild from templates
+  // Run init to rebuild from templates (call directly to use the same package version)
   console.log('\n  Running init to rebuild project...\n');
   try {
-    execSync('npx thepopebot init --no-install', { stdio: 'inherit', cwd });
+    await init({ noInstall: true });
   } catch {
     console.error('\n  Init failed. Your backup is at .backups/' + ts + '/\n');
     process.exit(1);
