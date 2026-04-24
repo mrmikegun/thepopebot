@@ -48,10 +48,26 @@
     "enabled": false
   },
   {
-    "name": "review-with-openai",
+    "name": "review-with-model-override",
     "watch_path": "/github/webhook",
     "actions": [
-      { "type": "agent", "job": "Review the GitHub event and summarize what happened:\n{{body}}", "llm_provider": "openai", "llm_model": "gpt-4o" }
+      { "type": "agent", "job": "Review the GitHub event and summarize what happened:\n{{body}}", "llm_model": "claude-opus-4-7" }
+    ],
+    "enabled": false
+  },
+  {
+    "name": "review-with-codex",
+    "watch_path": "/github/webhook",
+    "actions": [
+      { "type": "agent", "job": "Review the GitHub event and summarize what happened:\n{{body}}", "agent_backend": "codex-cli" }
+    ],
+    "enabled": false
+  },
+  {
+    "name": "scoped-webhook-agent",
+    "watch_path": "/webhook",
+    "actions": [
+      { "type": "agent", "job": "A webhook was received. Read jobs/handle-webhook.md and complete it using the payload:\n{{body}}", "scope": "agents/my-agent" }
     ],
     "enabled": false
   }

@@ -55,12 +55,32 @@ function ActionCard({ action, index }) {
           <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-words font-mono overflow-auto max-h-48">
             {action.job}
           </pre>
-          {(action.llm_provider || action.llm_model) && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs font-medium text-muted-foreground">LLM:</span>
-              <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-medium">
-                {[action.llm_provider, action.llm_model].filter(Boolean).join(' / ')}
-              </span>
+          {(action.agent_backend || action.llm_model || action.scope) && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {action.agent_backend && (
+                <>
+                  <span className="text-xs font-medium text-muted-foreground">Agent:</span>
+                  <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-medium">
+                    {action.agent_backend}
+                  </span>
+                </>
+              )}
+              {action.llm_model && (
+                <>
+                  <span className="text-xs font-medium text-muted-foreground">Model:</span>
+                  <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-medium">
+                    {action.llm_model}
+                  </span>
+                </>
+              )}
+              {action.scope && (
+                <>
+                  <span className="text-xs font-medium text-muted-foreground">Scope:</span>
+                  <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-mono">
+                    {action.scope}
+                  </span>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -80,6 +100,14 @@ function ActionCard({ action, index }) {
               <p className="text-xs font-medium text-muted-foreground mb-1">Variables</p>
               <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-words font-mono overflow-auto max-h-48">
                 {JSON.stringify(action.vars, null, 2)}
+              </pre>
+            </div>
+          )}
+          {action.headers && Object.keys(action.headers).length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Headers</p>
+              <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-words font-mono overflow-auto max-h-48">
+                {JSON.stringify(action.headers, null, 2)}
               </pre>
             </div>
           )}

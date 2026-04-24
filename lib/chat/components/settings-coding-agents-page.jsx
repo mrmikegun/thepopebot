@@ -6,6 +6,7 @@ import {
   getCodingAgentSettings,
   updateCodingAgentConfig,
   setCodingAgentDefault,
+  setModeDefault,
 } from '../actions.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ function DefaultAgentSection({ settings, onReload }) {
         <h2 className="text-base font-medium">Default Coding Agent</h2>
         <p className="text-sm text-muted-foreground">Select which coding agent runs headless tasks and code workspaces.</p>
       </div>
-      <div className="rounded-lg border bg-card p-4">
+      <div className="rounded-lg border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium shrink-0">Agent</label>
           <div className="flex items-center gap-3">
@@ -114,6 +115,89 @@ function DefaultAgentSection({ settings, onReload }) {
             </select>
           </div>
         </div>
+        <div className="border-t border-border pt-3 space-y-3">
+          <ModeDefaultRow
+            label="Agent mode branch"
+            mode="agent"
+            field="branch"
+            value={settings.modeDefaults?.agent?.branch || 'default'}
+            options={BRANCH_OPTIONS}
+            onSaved={onReload}
+          />
+          <ModeDefaultRow
+            label="Agent mode git action"
+            mode="agent"
+            field="gitAction"
+            value={settings.modeDefaults?.agent?.gitAction || 'push'}
+            options={GIT_ACTION_OPTIONS}
+            onSaved={onReload}
+          />
+        </div>
+        <div className="border-t border-border pt-3 space-y-3">
+          <ModeDefaultRow
+            label="Code mode branch"
+            mode="code"
+            field="branch"
+            value={settings.modeDefaults?.code?.branch || 'dynamic'}
+            options={BRANCH_OPTIONS}
+            onSaved={onReload}
+          />
+          <ModeDefaultRow
+            label="Code mode git action"
+            mode="code"
+            field="gitAction"
+            value={settings.modeDefaults?.code?.gitAction || 'create-pr'}
+            options={GIT_ACTION_OPTIONS}
+            onSaved={onReload}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const BRANCH_OPTIONS = [
+  { value: 'default', label: 'Default branch' },
+  { value: 'dynamic', label: 'Feature branch' },
+];
+
+const GIT_ACTION_OPTIONS = [
+  { value: 'commit', label: 'Commit' },
+  { value: 'push', label: 'Push' },
+  { value: 'create-pr', label: 'Create PR' },
+  { value: 'pull', label: 'Pull' },
+];
+
+function ModeDefaultRow({ label, mode, field, value, options, onSaved }) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleChange = async (e) => {
+    setSaving(true);
+    const result = await setModeDefault(mode, field, e.target.value);
+    setSaving(false);
+    if (result?.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      await onSaved();
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between">
+      <label className="text-sm font-medium shrink-0">{label}</label>
+      <div className="flex items-center gap-3">
+        {saving && <span className="text-xs text-muted-foreground">Saving...</span>}
+        {saved && <span className="text-xs text-green-500 inline-flex items-center gap-1"><CheckIcon size={12} /> Saved</span>}
+        <select
+          value={value}
+          onChange={handleChange}
+          className="w-48 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </div>
     </div>
   );

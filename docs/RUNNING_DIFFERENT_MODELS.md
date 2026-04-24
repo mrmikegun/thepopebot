@@ -28,7 +28,10 @@ See [CODING_AGENTS.md](CODING_AGENTS.md) for details.
 
 ## Per-Job Overrides
 
-Add `llm_provider` and `llm_model` to any agent-type entry in `agent-job/CRONS.json` or any action in `event-handler/TRIGGERS.json`. This overrides the default for just that one job:
+Agent-type entries in `agent-job/CRONS.json` and actions in `event-handler/TRIGGERS.json` accept two optional override fields:
+
+- **`agent_backend`** — pick which coding agent runs the job, overriding the default set in Admin > Event Handler > Coding Agents. Values: `claude-code`, `codex-cli`, `gemini-cli`, `pi`, `opencode`, `kimi-cli`. The provider is implicit in the agent (e.g. `codex-cli` → OpenAI, `gemini-cli` → Google).
+- **`llm_model`** — override the model used within the selected coding agent. The value must be a model the chosen agent supports (e.g. `claude-opus-4-7` for Claude Code, `gpt-5.4` for Codex).
 
 ```json
 {
@@ -36,12 +39,12 @@ Add `llm_provider` and `llm_model` to any agent-type entry in `agent-job/CRONS.j
   "schedule": "0 9 * * 1",
   "type": "agent",
   "job": "Review open PRs and leave comments",
-  "llm_provider": "openai",
+  "agent_backend": "codex-cli",
   "llm_model": "gpt-5.4"
 }
 ```
 
-The matching API key must already be configured in the admin UI.
+The coding agent must be enabled in the admin UI before an override can select it.
 
 ## Provider Reference
 
@@ -92,6 +95,6 @@ Set this as the base URL when adding a custom provider in the admin UI. Most loc
 | Chat model (web chat, Telegram, webhooks) | Admin > Event Handler > Chat |
 | API keys and providers | Admin > Event Handler > LLMs |
 | Coding agent model (workspaces, jobs) | Admin > Event Handler > Coding Agents |
-| Per-job override | `llm_provider` + `llm_model` in `agent-job/CRONS.json` or `event-handler/TRIGGERS.json` |
+| Per-job override | `agent_backend` + `llm_model` in `agent-job/CRONS.json` or `event-handler/TRIGGERS.json` |
 | Custom provider (cloud) | Admin > Event Handler > LLMs > Add custom provider with base URL |
 | Custom provider (local) | Same as above, use `http://host.docker.internal:<port>/v1` as base URL |

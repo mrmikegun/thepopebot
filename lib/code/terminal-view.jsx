@@ -842,7 +842,7 @@ export default function TerminalView({ codeWorkspaceId, wsPath, isActive = true,
   );
 }
 
-const STORAGE_KEY = 'thepopebot-workspace-command';
+const STORAGE_KEY = 'thepopebot-workspace-command:code';
 
 function ToolbarCommandButton({ codeWorkspaceId, diffStats, onDiffStatsRefresh, onShowDiff }) {
   const [selectedCommand, setSelectedCommandState] = useState(() => {
@@ -852,6 +852,21 @@ function ToolbarCommandButton({ codeWorkspaceId, diffStats, onDiffStatsRefresh, 
     setSelectedCommandState(cmd);
     try { localStorage.setItem(STORAGE_KEY, cmd); } catch {}
   };
+
+  // Seed from admin default if user hasn't picked anything for code mode yet.
+  useEffect(() => {
+    let stored = null;
+    try { stored = localStorage.getItem(STORAGE_KEY); } catch {}
+    if (stored) return;
+    let cancelled = false;
+    import('../chat/actions.js').then(({ getModeGitActionDefault }) => {
+      getModeGitActionDefault('code').then((val) => {
+        if (cancelled || !val) return;
+        setSelectedCommandState(val);
+      }).catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [commandRunning, setCommandRunning] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [commandOutput, setCommandOutput] = useState('');

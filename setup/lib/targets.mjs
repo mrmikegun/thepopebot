@@ -41,6 +41,6 @@ export const CONFIG_TARGETS = {
   // GitHub-only
   BRAVE_API_KEY:         { secret: 'AGENT_LLM_BRAVE_API_KEY' },
   AUTO_MERGE:            { variable: true, default: 'true', firstRunOnly: true },
-  ALLOWED_PATHS:         { variable: true, default: '/logs', firstRunOnly: true },
+  ALLOWED_PATHS:         { variable: true, default: '/logs,/agents', firstRunOnly: true },
   RUNS_ON:               { variable: true },
 };

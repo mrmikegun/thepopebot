@@ -133,12 +133,32 @@ function CronCard({ cron }) {
               <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-words font-mono overflow-auto max-h-48">
                 {cron.job}
               </pre>
-              {(cron.llm_provider || cron.llm_model) && (
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs font-medium text-muted-foreground">LLM:</span>
-                  <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-medium">
-                    {[cron.llm_provider, cron.llm_model].filter(Boolean).join(' / ')}
-                  </span>
+              {(cron.agent_backend || cron.llm_model || cron.scope) && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {cron.agent_backend && (
+                    <>
+                      <span className="text-xs font-medium text-muted-foreground">Agent:</span>
+                      <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-medium">
+                        {cron.agent_backend}
+                      </span>
+                    </>
+                  )}
+                  {cron.llm_model && (
+                    <>
+                      <span className="text-xs font-medium text-muted-foreground">Model:</span>
+                      <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-medium">
+                        {cron.llm_model}
+                      </span>
+                    </>
+                  )}
+                  {cron.scope && (
+                    <>
+                      <span className="text-xs font-medium text-muted-foreground">Scope:</span>
+                      <span className="inline-flex items-center rounded-full bg-purple-500/10 text-purple-500 px-2 py-0.5 text-[10px] font-mono">
+                        {cron.scope}
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -164,6 +184,14 @@ function CronCard({ cron }) {
                   <p className="text-xs font-medium text-muted-foreground mb-1.5">Variables</p>
                   <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-words font-mono overflow-auto max-h-48">
                     {JSON.stringify(cron.vars, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {cron.headers && Object.keys(cron.headers).length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Headers</p>
+                  <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-words font-mono overflow-auto max-h-48">
+                    {JSON.stringify(cron.headers, null, 2)}
                   </pre>
                 </div>
               )}

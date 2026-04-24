@@ -12,5 +12,21 @@
     "type": "command",
     "command": "echo \"pong!\"",
     "enabled": true
+  },
+  {
+    "name": "scoped-agent-example",
+    "schedule": "0 9 * * *",
+    "type": "agent",
+    "job": "Read jobs/daily-check.md and complete it.",
+    "scope": "agents/my-agent",
+    "enabled": false
+  },
+  {
+    "name": "agent-backend-override-example",
+    "schedule": "0 10 * * *",
+    "type": "agent",
+    "job": "Summarize open pull requests.",
+    "agent_backend": "codex-cli",
+    "enabled": false
   }
 ]

@@ -28,7 +28,8 @@ There are three action types:
 
 Optional fields:
 - `"scope"` (e.g. `"agents/my-agent"`) — routes the cron to a scoped agent. Its `SYSTEM.md`, skills directory, and working directory all switch to that subdirectory. See `agents/CLAUDE.md` for the full pattern.
-- `"llm_provider"` and `"llm_model"` — override the default LLM for that job.
+- `"agent_backend"` (e.g. `"claude-code"`, `"codex-cli"`, `"gemini-cli"`, `"pi"`, `"opencode"`, `"kimi-cli"`) — pick which coding agent runs the job, overriding the default set in Admin > Event Handler > Coding Agents.
+- `"llm_model"` — override the model used within the selected coding agent (provider is implicit in the agent).
 
 **`command`** — Runs a shell command on the event handler (working directory: project root).
 

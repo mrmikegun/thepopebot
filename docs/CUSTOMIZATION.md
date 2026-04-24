@@ -103,18 +103,18 @@ Define recurring jobs in `agent-job/CRONS.json`:
     "enabled": false
   },
   {
-    "name": "daily-check-openai",
+    "name": "daily-check-codex",
     "schedule": "0 9 * * *",
     "type": "agent",
     "job": "Check for dependency updates",
-    "llm_provider": "openai",
-    "llm_model": "gpt-4o",
+    "agent_backend": "codex-cli",
+    "llm_model": "gpt-5.4",
     "enabled": false
   }
 ]
 ```
 
-Each cron entry requires a `type` field — one of `agent` (spawns a Docker agent job), `command` (runs a shell command), or `webhook` (sends an HTTP request). Agent jobs can override the default LLM by setting `llm_provider` and `llm_model`. Set `"enabled": true` to activate a scheduled job.
+Each cron entry requires a `type` field — one of `agent` (spawns a Docker agent job), `command` (runs a shell command), or `webhook` (sends an HTTP request). Agent jobs can pick a specific coding agent with `agent_backend` and override its model with `llm_model`. Set `"enabled": true` to activate a scheduled job.
 
 ---
 

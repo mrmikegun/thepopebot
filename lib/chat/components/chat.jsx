@@ -22,6 +22,12 @@ const fetchBranches = (repoFullName) =>
     .then(r => r.json())
     .catch(() => []);
 
+const fetchDefaultBranch = (repoFullName) =>
+  fetch(`/code/default-branch?repo=${encodeURIComponent(repoFullName)}`)
+    .then(r => r.json())
+    .then(({ branch }) => branch || null)
+    .catch(() => null);
+
 const fetchCreateRepository = (name) =>
   fetch('/code/repositories/create', {
     method: 'POST',
@@ -88,7 +94,7 @@ export function Chat({ chatId, initialMessages = [], workspace = null, chatMode 
           setDefaultRepo(r);
           if (!workspace && !repo && !codeMode) {
             setRepo(r);
-            setBranch('main');
+            fetchDefaultBranch(r).then((b) => { if (b) setBranch(b); });
           }
         }
       }).catch(() => {});
@@ -272,9 +278,9 @@ export function Chat({ chatId, initialMessages = [], workspace = null, chatMode 
     hasMessages: messages.length > 0,
   };
 
-  const defaultPlaceholder = codeMode
-    ? 'Send a message...'
-    : `Send message to /${scope || ''}`;
+  const defaultPlaceholder = !codeMode && scope
+    ? `Send message to /${scope}`
+    : 'Send a message...';
 
   const handleBranchChange = useCallback((newBranch) => {
     setBranch(newBranch);
@@ -360,7 +366,8 @@ export function Chat({ chatId, initialMessages = [], workspace = null, chatMode 
                       setBranch('');
                     } else if (defaultRepo) {
                       setRepo(defaultRepo);
-                      setBranch('main');
+                      setBranch('');
+                      fetchDefaultBranch(defaultRepo).then((b) => { if (b) setBranch(b); });
                     } else {
                       setRepo('');
                       setBranch('');
@@ -428,6 +435,7 @@ export function Chat({ chatId, initialMessages = [], workspace = null, chatMode 
                         diffStats={diffStats}
                         onDiffStatsRefresh={handleDiffStatsRefresh}
                         onShowDiff={() => setShowDiff(true)}
+                        chatMode={codeMode ? 'code' : 'agent'}
                       />
                     </div>
                   )}
