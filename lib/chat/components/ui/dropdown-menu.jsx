@@ -47,17 +47,41 @@ export function DropdownMenuContent({ children, className, align = 'start', side
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    const margin = 8;
+    let left = align === 'start' ? rect.left : undefined;
+    let right = align === 'end' ? window.innerWidth - rect.right : undefined;
+
+    // Clamp horizontally so the menu never overflows the viewport.
+    const menuWidth = ref.current?.getBoundingClientRect().width || 0;
+    if (menuWidth > 0) {
+      if (align === 'end') {
+        const computedLeft = rect.right - menuWidth;
+        if (computedLeft < margin) {
+          right = undefined;
+          left = margin;
+        }
+      } else {
+        const computedRight = rect.left + menuWidth;
+        if (computedRight > window.innerWidth - margin) {
+          left = undefined;
+          right = margin;
+        }
+      }
+    }
+
     setPos({
       top: side === 'bottom' ? rect.bottom + sideOffset : undefined,
       bottom: side === 'top' ? window.innerHeight - rect.top + sideOffset : undefined,
-      left: align === 'start' ? rect.left : undefined,
-      right: align === 'end' ? window.innerWidth - rect.right : undefined,
+      left,
+      right,
     });
   }, [triggerRef, side, align, sideOffset]);
 
   useEffect(() => {
     if (!open) { setPos(null); return; }
     updatePosition();
+    // Re-run after render so menu width is measurable for clamping.
+    const raf = requestAnimationFrame(updatePosition);
     const handleClickOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target) && triggerRef.current && !triggerRef.current.contains(e.target)) {
         onOpenChange(false);
@@ -71,6 +95,7 @@ export function DropdownMenuContent({ children, className, align = 'start', side
     document.addEventListener('keydown', handleEsc);
     window.addEventListener('scroll', handleScroll, true);
     return () => {
+      cancelAnimationFrame(raf);
       document.removeEventListener('click', handleClickOutside);
       document.removeEventListener('keydown', handleEsc);
       window.removeEventListener('scroll', handleScroll, true);

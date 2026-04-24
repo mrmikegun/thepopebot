@@ -6,7 +6,7 @@ if [ -n "$SCOPE" ]; then
     SCOPE_DIR="/home/coding-agent/workspace/$SCOPE"
     if [ -d "$SCOPE_DIR" ]; then
         cd "$SCOPE_DIR"
-        echo "  Scoped to: $SCOPE"
+        echo "→ Scoped to: $SCOPE"
     else
         echo "  WARNING: Scope directory '$SCOPE' does not exist in workspace, staying at root"
     fi
