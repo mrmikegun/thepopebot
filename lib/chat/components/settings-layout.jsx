@@ -5,12 +5,12 @@ import { PageLayout } from './page-layout.js';
 import { UserIcon, ClockIcon, ZapIcon, MessageIcon, GitBranchIcon, SettingsIcon } from './icons.js';
 
 const TABS = [
+  { id: 'general', label: 'General', href: '/admin/general', icon: SettingsIcon },
   { id: 'event-handler', label: 'Event Handler', href: '/admin/event-handler', icon: MessageIcon },
-  { id: 'github', label: 'GitHub', href: '/admin/github', icon: GitBranchIcon },
-  { id: 'users', label: 'Users', href: '/admin/users', icon: UserIcon },
   { id: 'crons', label: 'Crons', href: '/admin/crons', icon: ClockIcon },
   { id: 'triggers', label: 'Triggers', href: '/admin/triggers', icon: ZapIcon },
-  { id: 'general', label: 'General', href: '/admin/general', icon: SettingsIcon },
+  { id: 'users', label: 'Users', href: '/admin/users', icon: UserIcon },
+  { id: 'github', label: 'GitHub', href: '/admin/github', icon: GitBranchIcon },
 ];
 
 export function SettingsLayout({ session, children }) {
