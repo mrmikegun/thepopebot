@@ -94,13 +94,14 @@ function extractAgentJobId(branchName) {
 
 async function handleCreateAgentJob(request) {
   const body = await request.json();
-  const { job } = body;
-  if (!job) return Response.json({ error: 'Missing job field' }, { status: 400 });
+  const { agent_job } = body;
+  if (!agent_job) return Response.json({ error: 'Missing agent_job field' }, { status: 400 });
 
   try {
-    const result = await createAgentJob(job, {
+    const result = await createAgentJob(agent_job, {
       llmModel: body.llm_model,
       agentBackend: body.agent_backend,
+      scope: body.scope,
     });
     return Response.json(result);
   } catch (err) {

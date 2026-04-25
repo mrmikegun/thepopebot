@@ -29,7 +29,7 @@ Browser-facing data fetching uses **fetch route handlers** colocated with pages 
 | Method | Path | Auth | Handler |
 |--------|------|------|---------|
 | GET | `/api/ping` | None | Health check |
-| POST | `/api/create-agent-job` | `x-api-key` | Create agent job |
+| POST | `/api/create-agent-job` | `x-api-key` | Create agent job. Body: `{ agent_job, llm_model?, agent_backend?, scope? }` |
 | GET | `/api/get-agent-job-secret` | `agent_job_api_key` only | Get an agent job secret. `oauth2` credentials return only the access_token (auto-refreshed under a lock; rotated refresh tokens are persisted back). Other secret types return the raw value. |
 | POST | `/api/set-agent-job-secret` | `agent_job_api_key` only | Create or update an agent-job secret from inside the container (used by the `set-secret` skill). |
 | GET | `/api/agent-job-list-secrets` | `x-api-key` | List agent job secret keys (no values); returns `{secrets: [{key, isSet, updatedAt, secretType}]}` |

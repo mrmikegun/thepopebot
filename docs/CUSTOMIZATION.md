@@ -73,7 +73,7 @@ Create jobs programmatically via HTTP:
 curl -X POST https://your-app-url/api/create-agent-job \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_API_KEY" \
-  -d '{"job": "Update the README with installation instructions"}'
+  -d '{"agent_job": "Update the README with installation instructions"}'
 ```
 
 API keys are managed at Admin > Event Handler > Webhooks.
