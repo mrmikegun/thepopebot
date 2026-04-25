@@ -12,7 +12,16 @@ Calls Docker Engine API directly through `/var/run/docker.sock` using Node's `ht
 
 **Image pull on demand**: Checks if image exists locally before pulling. Avoids pre-pulling at startup.
 
-**`buildAgentAuthEnv(agent)`**: Resolves coding agent type → auth environment variables from the settings DB. Handles OAuth vs API key auth modes, multi-provider resolution (builtin + custom), and model overrides. Each agent type (claude-code, pi, gemini-cli, codex-cli, opencode) has its own credential resolution path. OAuth tokens use LRU rotation via `getNextOAuthToken()`. All credentials come from the DB, not `.env` or GitHub secrets.
+**`buildAgentAuthEnv(agent)`**: Resolves coding agent type → auth environment variables from the settings DB. All credentials come from the DB (`getConfig`, `getCustomProvider`), never `.env` or GitHub secrets. Returns `{ env: string[], backendApi: string }`.
+
+Per-agent resolution paths:
+
+- **`claude-code`** — `CODING_AGENT_CLAUDE_CODE_BACKEND` selects backend. If `anthropic`, picks OAuth (`CLAUDE_CODE_OAUTH_TOKEN` via LRU rotation) or API key (`ANTHROPIC_API_KEY`). For Anthropic-compatible third parties (DeepSeek, MiniMax, Kimi, OpenRouter) sets `ANTHROPIC_AUTH_TOKEN` + `ANTHROPIC_BASE_URL` to the provider's `anthropicEndpoint`. For OpenAI-only builtins or custom providers, routes through the LiteLLM sidecar at `http://litellm:4000` and prefixes the model with the provider key.
+- **`pi-coding-agent`, `opencode`, `kimi-cli`** — share a multi-provider pattern. `CODING_AGENT_{AGENT}_PROVIDER` picks anthropic/openai/google/deepseek/minimax/mistral/xai/openrouter/nvidia or a custom provider. Sets the matching `*_API_KEY` (or `CUSTOM_OPENAI_BASE_URL` + `CUSTOM_API_KEY` for custom).
+- **`gemini-cli`** — `GOOGLE_API_KEY` only. Backend is always `google`.
+- **`codex-cli`** — OAuth (`CODEX_OAUTH_TOKEN`) or API key (`OPENAI_API_KEY`). Backend always `openai`.
+
+OAuth tokens use LRU rotation via `getNextOAuthToken()` (in `lib/db/oauth-tokens.js`) — distributes load across multiple stored tokens and updates `lastUsedAt` on each pick. Refresh-token rotation is handled at retrieval time in `/api/get-agent-job-secret` (under a per-token lock).
 
 ## create-agent-job.js — Agent Job Creation
 

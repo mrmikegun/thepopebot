@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { PageLayout } from './page-layout.js';
-import { SpinnerIcon, RefreshIcon, StopIcon, PlayIcon, TrashIcon, XIcon } from './icons.js';
+import { SpinnerIcon, RefreshIcon, StopIcon, PlayIcon, TrashIcon, XIcon, FileTextIcon } from './icons.js';
 import { ConfirmDialog } from './ui/confirm-dialog.js';
 import { CodeLogView } from './code-log-view.js';
 import {
@@ -263,22 +263,32 @@ function ContainerRow({ container, onRequestStop, onShowLogs, isStopping, isStar
       </td>
       <td className="py-2.5 text-right whitespace-nowrap">
         <div className="inline-flex items-center gap-1.5">
+          <button
+            onClick={() => onShowLogs(container.name)}
+            title="Logs"
+            aria-label="Logs"
+            className="inline-flex items-center justify-center rounded-md p-1.5 border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <FileTextIcon size={14} />
+          </button>
           {isRunning && (
             isStopping ? (
               <button
                 disabled
-                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border text-muted-foreground disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                title="Stopping..."
+                aria-label="Stopping"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-border text-muted-foreground disabled:opacity-50 disabled:pointer-events-none transition-colors"
               >
-                <SpinnerIcon size={12} />
-                Stopping...
+                <SpinnerIcon size={14} />
               </button>
             ) : (
               <button
                 onClick={() => onRequestStop(container.name)}
-                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                title="Stop"
+                aria-label="Stop"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               >
-                <StopIcon size={12} />
-                Stop
+                <StopIcon size={14} />
               </button>
             )
           )}
@@ -286,38 +296,35 @@ function ContainerRow({ container, onRequestStop, onShowLogs, isStopping, isStar
             isStarting ? (
               <button
                 disabled
-                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border text-muted-foreground disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                title="Starting..."
+                aria-label="Starting"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-border text-muted-foreground disabled:opacity-50 disabled:pointer-events-none transition-colors"
               >
-                <SpinnerIcon size={12} />
-                Starting...
+                <SpinnerIcon size={14} />
               </button>
             ) : (
               <button
                 onClick={() => onRequestStop(container.name, 'start')}
-                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                title="Start"
+                aria-label="Start"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               >
-                <PlayIcon size={12} />
-                Start
+                <PlayIcon size={14} />
               </button>
             )
           )}
           <button
-            onClick={() => onShowLogs(container.name)}
-            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
-            Logs
-          </button>
-          <button
             onClick={() => handleAction('remove')}
             disabled={removingContainer}
-            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium border transition-colors disabled:opacity-50 disabled:pointer-events-none ${
+            title={confirmingRemove ? 'Confirm remove' : 'Remove'}
+            aria-label={confirmingRemove ? 'Confirm remove' : 'Remove'}
+            className={`inline-flex items-center justify-center rounded-md p-1.5 border transition-colors disabled:opacity-50 disabled:pointer-events-none ${
               confirmingRemove
                 ? 'border-destructive text-destructive hover:bg-destructive/10'
                 : 'border-border text-muted-foreground hover:bg-accent hover:text-foreground'
             }`}
           >
-            {removingContainer ? <SpinnerIcon size={12} /> : <TrashIcon size={12} />}
-            {confirmingRemove ? 'Confirm' : 'Remove'}
+            {removingContainer ? <SpinnerIcon size={14} /> : <TrashIcon size={14} />}
           </button>
         </div>
       </td>
@@ -330,6 +337,8 @@ function ContainerRow({ container, onRequestStop, onShowLogs, isStopping, isStar
 // ─────────────────────────────────────────────────────────────────────────────
 
 function DockerContainersSection({ containers, loading, onRequestStop, onShowLogs, pendingStop, pendingStart }) {
+  const [activeTab, setActiveTab] = useState('running');
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -343,12 +352,42 @@ function DockerContainersSection({ containers, loading, onRequestStop, onShowLog
     );
   }
 
+  const runningContainers = containers.filter((c) => c.state === 'running');
+  const exitedContainers = containers.filter((c) => c.state !== 'running');
+  const visibleContainers = activeTab === 'running' ? runningContainers : exitedContainers;
+
+  const tabs = [
+    { id: 'running', label: `Running (${runningContainers.length})` },
+    { id: 'exited', label: `Exited (${exitedContainers.length})` },
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="text-base font-medium">Docker Containers</h2>
-      {containers.length === 0 ? (
+
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide max-w-full">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`rounded-full px-3 py-1.5 min-h-[36px] inline-flex items-center text-xs font-medium transition-colors shrink-0 whitespace-nowrap ${
+                isActive
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {visibleContainers.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          No containers found on the compose network.
+          {activeTab === 'running' ? 'No running containers.' : 'No exited containers.'}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -364,7 +403,7 @@ function DockerContainersSection({ containers, loading, onRequestStop, onShowLog
               </tr>
             </thead>
             <tbody>
-              {containers.map((c) => (
+              {visibleContainers.map((c) => (
                 <ContainerRow
                   key={c.id}
                   container={c}

@@ -25,11 +25,12 @@ Key files: `schema.js` (source of truth), `drizzle/` (generated migrations), `dr
 | `users` | Admin accounts (email, bcrypt password hash, role) |
 | `chats` | Chat sessions (user_id, title, starred, chat_mode, code_workspace_id, timestamps) |
 | `messages` | Chat messages (chat_id, role, content) |
-| `code_workspaces` | Code workspace containers (user_id, container_name, repo, branch, feature_branch, title, last_interactive_commit, starred, has_changes) |
+| `code_workspaces` | Code workspace containers (user_id, container_name, repo, branch, feature_branch, title, last_interactive_commit, coding_agent, scope, starred, has_changes) |
 | `notifications` | Job completion notifications (notification text, payload, read status) |
 | `subscriptions` | Channel subscriptions (platform, channel_id) |
+| `user_channels` | Per-user channel linking (user_id, channel, channel_chat_id, code, code_expires_at, verified_at, active_thread_id) — Telegram verification + active thread |
 | `clusters` | Worker clusters (user_id, name, system_prompt, folders, enabled, starred) |
-| `cluster_roles` | Role definitions scoped to a cluster (cluster_id, role_name, role, trigger_config, max_concurrency, cleanup_worker_dir, folders) |
+| `cluster_roles` | Role definitions scoped to a cluster (cluster_id, role_name, role, trigger_config, max_concurrency, plan_mode, cleanup_worker_dir, folders) |
 | `settings` | Key-value configuration store (also stores API keys and OAuth tokens via type/key/value) |
 
 ## OAuth Token Storage
@@ -64,3 +65,5 @@ OAuth tokens for coding agent backends are stored as `config_secret` with LRU ro
 - `chats.chatMode` — `'agent'` (default) or `'code'`. Determines which agent singleton and tools are used.
 - `codeWorkspaces.featureBranch` — tracks the git feature branch for the workspace session.
 - `codeWorkspaces.hasChanges` — flag set when workspace has uncommitted changes.
+- `codeWorkspaces.codingAgent` — per-workspace coding-agent override. Falls back to global `CODING_AGENT` config, then `claude-code` (`lib/code/actions.js:410`).
+- `codeWorkspaces.scope` — subdirectory scope within the repo (e.g., `agents/gary-vee`). Resolves the agent's working directory and skills (`lib/ai/scope.js`).

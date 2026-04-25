@@ -1,9 +1,19 @@
 # lib/containers/ — Container Streaming
 
-`stream.js` exports `GET(request)` — an SSE route handler for real-time Docker container monitoring.
+Two SSE endpoints — both authenticated via `auth()` session.
 
-**Endpoint**: `/stream/containers` (actual SSE streaming, stays in `/stream/`)
-**Auth**: `auth()` session check
-**Events**: `containers` (every 3s with full container list + CPU/memory stats), `ping` (keepalive every 15s)
-**Data source**: `listNetworkContainers()` + `getContainerStats()` from `lib/tools/docker.js`
-**Client**: `ContainersPage` connects via `new EventSource('/stream/containers')`
+## `stream.js` — Container Status
+
+- **Endpoint**: `/stream/containers`
+- **Events**: `containers` (every 3s with full container list + CPU/memory stats), `ping` (keepalive every 15s)
+- **Data source**: `listNetworkContainers()` + `getContainerStats()` from `lib/tools/docker.js`. Filtered to containers on the event-handler's Docker network (auto-detected at boot).
+- **Client**: `ContainersPage` connects via `new EventSource('/stream/containers')`
+
+## `logs.js` — Container Log Tail
+
+- **Endpoint**: `/stream/containers/logs?name=<containerName>`
+- **Events**: raw log lines as SSE `data:` frames
+- **Data source**: Docker `containers/{id}/logs?follow=true&stdout=1&stderr=1` via the multiplexed-stream parser in `lib/tools/docker.js`
+- **Client**: `ContainerLogsView` (used from the Containers admin page when a row's logs are expanded)
+
+Both endpoints share the same network filter and frame-decoding logic so all SSE consumers see the same view.

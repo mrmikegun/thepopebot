@@ -69,9 +69,14 @@ If a skill needs an API key, add it via the admin UI (Settings > Agent Jobs > Se
 
 Skills are active when present in the `skills/` directory. To deactivate, remove or move the skill directory out.
 
-All coding agents discover skills from the same `skills/` directory via symlink bridges:
-- `.claude/skills → ../skills`
-- `.pi/skills → ../skills`
+All coding agents discover skills from the same `skills/` directory via symlink bridges created by `npx thepopebot init`:
+
+- `.claude/skills → ../skills` (Claude Code)
+- `.pi/skills → ../skills` (Pi)
+- `.codex/skills → ../skills` (Codex CLI)
+- `.gemini/skills → ../skills` (Gemini CLI)
+- `.kimi/skills → ../skills` (Kimi CLI)
+- `.agents/skills → ../skills` (OpenCode and other plugin-style agents)
 
 ## Creating a Skill
 

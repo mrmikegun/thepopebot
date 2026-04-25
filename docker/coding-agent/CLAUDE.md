@@ -307,15 +307,6 @@ The agent has a `--session-dir` flag that controls where sessions are stored.
 - On empty directory, `-c` gracefully creates a new session
 - No session ID capture or validation needed — the filesystem IS the mapping
 
-#### Pattern E: Native hooks (Kimi)
-
-The agent has a hooks system similar to Claude Code.
-
-**Kimi** — `SessionStart` hook in `~/.kimi/config.toml`:
-- Hook receives JSON on stdin with `session_id` field
-- Writes session ID to `.kimi-ttyd-sessions/${PORT}`
-- Resume flag: `--session $SESSION_ID`
-
 #### Pattern D: AfterAgent hook with file inspection (Gemini)
 
 The agent has hooks but doesn't provide the session ID in env vars or stdin.
@@ -325,6 +316,15 @@ The agent has hooks but doesn't provide the session ID in env vars or stdin.
 - Hook finds the most recent session file in `~/.gemini/tmp/workspace/chats/session-*.json`
 - Extracts short UUID from filename, resolves full UUID via `gemini --list-sessions`
 - Resume flag: `--resume $SESSION_ID`
+
+#### Pattern E: Native hooks (Kimi)
+
+The agent has a hooks system similar to Claude Code.
+
+**Kimi** — `SessionStart` hook in `~/.kimi/config.toml`:
+- Hook receives JSON on stdin with `session_id` field
+- Writes session ID to `.kimi-ttyd-sessions/${PORT}`
+- Resume flag: `--session $SESSION_ID`
 
 ### Session validation
 
@@ -342,6 +342,17 @@ Before passing a resume flag, validate the session still exists. If the volume w
 ### Headless session tracking
 
 Headless `run.sh` always reads from port `7681` (the primary tab's session). This ensures headless runs continue the same conversation as the interactive session.
+
+## Agent Scoping
+
+When `SCOPE` is set (e.g. `SCOPE=agents/triage`), the entrypoint scripts adjust:
+
+- **Working directory** — `cd $WORKSPACE/agents/triage` instead of `$WORKSPACE`. Set up by `scripts/common/scope.sh` (sourced by interactive + headless flows).
+- **System prompt resolution** — `agents/triage/SYSTEM.md` is preferred over the default `event-handler/agent-chat/SYSTEM.md`.
+- **Skills** — falls back through `agents/triage/skills/` → root `skills/` (handled by the host-side `lib/ai/scope.js`; the container just sees the resolved system prompt + working directory).
+- **Session paths** — sessions go under `.{agent}-ttyd-sessions/agents/triage/${PORT}`. This means each scoped agent has an isolated session-file namespace even on the same shared volume.
+
+`SCOPE` is set by `lib/tools/docker.js` when launching agent-job, headless, or interactive containers, based on the workspace's `scope` column or the cron/trigger `scope` field.
 
 ## Env Vars
 

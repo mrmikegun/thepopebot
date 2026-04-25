@@ -41,9 +41,15 @@ Roles support multiple concurrent triggers. All paths use `canRunRole()` as a sh
 
 ## Concurrency & Validation
 
-`canRunRole(roleIdOrData)` is the shared gate function. It checks cluster enabled status and concurrency limits. Returns `{ allowed, reason?, roleData? }`. All trigger paths call this before `runClusterRole()`.
+`canRunRole(roleIdOrData)` is the synchronous validation function. It checks cluster enabled status and concurrency limits. Returns `{ allowed, reason?, roleData? }`. Reasons: `disabled` (cluster off), `concurrency` (at max), `not_found`.
 
-Each role has `maxConcurrency` (default 1). `canRunRole()` counts running instances via `listContainers()`. Reasons: `disabled` (cluster off), `concurrency` (at max), `not_found`.
+`acquireAndRunRole(roleId, payload?)` is the **atomic gate** that all trigger paths actually use. It calls `canRunRole()` and `runClusterRole()` together so two simultaneous triggers can't both pass the concurrency check before either container is observable to `listContainers()`. Manual UI triggers, webhooks, cron, and file-watch all funnel through this.
+
+Each role has `maxConcurrency` (default 1). `canRunRole()` counts running instances via `listContainers()`.
+
+## Plan Mode (Roles)
+
+`cluster_roles.planMode` (default `0`) gates the worker into Claude's plan-mode (read-only). When set, the worker is launched with `PERMISSION=plan` so it cannot execute mutating tools. Useful for review/analysis roles.
 
 ## Prompt Architecture
 
@@ -75,6 +81,6 @@ Built by `buildTemplateVars()` → `buildWorkerSystemPrompt()` + `resolveCluster
 ## DB Tables
 
 - `clusters` — cluster metadata (name, system_prompt, folders, enabled)
-- `cluster_roles` — role definitions scoped to a cluster (role_name, role, prompt, trigger_config, max_concurrency, cleanup_worker_dir, folders)
+- `cluster_roles` — role definitions scoped to a cluster (role_name, role, prompt, trigger_config, max_concurrency, plan_mode, cleanup_worker_dir, folders)
 
 Workers are ephemeral containers, not database entities.

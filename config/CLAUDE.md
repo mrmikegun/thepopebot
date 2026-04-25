@@ -1,9 +1,28 @@
-# config/ — Next.js Config Wrapper
+# config/ — Next.js Config + Server Bootstrap
 
 ## Next.js Config Wrapper (index.js)
 
-`withThepopebot()` wraps user's `next.config.mjs`. Adds `transpilePackages` and `serverExternalPackages` for the npm package's dependencies that need special bundling.
+`withThepopebot()` wraps the user's `next.config.mjs`. Adds `transpilePackages` and `serverExternalPackages` for npm-package dependencies that need special bundling (Drizzle, better-sqlite3, etc.).
 
-## Instrumentation (instrumentation.js)
+## Instrumentation Hook (instrumentation.js)
 
-Server startup hook loaded by Next.js. Sequence: loads `.env`, initializes database, starts cron scheduler, starts cluster runtime. Skipped during `next build` (checks `NEXT_PHASE`).
+Loaded by Next.js once on server start. The user's project re-exports it from their own `instrumentation.js`:
+
+```js
+export { register } from 'thepopebot/instrumentation';
+```
+
+### Boot sequence
+
+1. **Skip during `next build`** — checks `process.argv` for `'build'` to avoid keeping the event loop alive during build output.
+2. **Load `.env`** — `dotenv.config()` from project root.
+3. **Default `AUTH_URL` from `APP_URL`** — so NextAuth redirects to the correct host on sign-out.
+4. **Validate `AUTH_SECRET`** — throws if unset (required for session encryption).
+5. **`initDatabase()`** — `lib/db/index.js`. Opens SQLite, runs Drizzle migrations.
+6. **`migrateEnvToDb()`** — `lib/db/config.js`. Idempotent first-run migration of `.env` values into the settings table.
+7. **`loadCrons()`** — `lib/cron.js`. Reads `agent-job/CRONS.json`, schedules user-defined crons.
+8. **`startBuiltinCrons()`** — `lib/cron.js`. Starts internal crons (e.g., npm version check). Then warms the in-memory update flag from `lib/db/update-check.js`.
+9. **`startClusterRuntime()`** — `lib/cluster/runtime.js`. Registers cluster role triggers (cron + file watch + webhook).
+10. **`startMaintenanceCron()`** — `lib/maintenance.js`. Hourly cleanup of expired agent-job API keys and other housekeeping.
+
+`initialized` is module-scoped so the sequence runs exactly once even if `register()` is called more than once.

@@ -20,16 +20,14 @@ This is a [thepopebot](https://github.com/stephengpope/thepopebot) project.
 
 ## Managed Files
 
-Some files are auto-synced by `npx thepopebot init` and will be overwritten on upgrade. Do not edit these:
+Some files are auto-synced by `npx thepopebot init` and will be overwritten on every init/upgrade. Do not edit these:
 
 - `.github/workflows/` — CI/CD workflows
 - `docker-compose.yml`
 - `.dockerignore`
 - `.gitignore`
-- `agent-job/CLAUDE.md`
-- `agents/CLAUDE.md`
-- `event-handler/CLAUDE.md`
-- `skills/CLAUDE.md`
+
+The `CLAUDE.md` files scattered through the project tree (e.g. `agent-job/CLAUDE.md`, `agents/CLAUDE.md`, `event-handler/CLAUDE.md`, `skills/CLAUDE.md`) are scaffolded by `init` from `*.template` sources but are **not** in the managed-paths list — they will not be overwritten if you have edited them. Run `npx thepopebot reset <path>` to restore one to its template default, or `npx thepopebot diff <path>` to see your local changes.
 
 ## Agent Scoping
 

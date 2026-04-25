@@ -38,10 +38,10 @@ export { getRepositoriesHandler as GET } from 'thepopebot/chat/api';
 ## Chat Streaming Flow
 
 1. Client sends message via AI SDK `DefaultChatTransport` → `POST /stream/chat`
-2. Handler validates session, extracts text + file attachments from message parts
-3. Calls `chatStream()` from `lib/ai/` which handles DB persistence and LLM invocation
-4. Streams response chunks (text deltas, tool calls, tool results) via `createUIMessageStream`
-5. After first message, client calls `/chat/finalize-chat` to generate auto-title
+2. Handler validates session, extracts text + file attachments from message parts. Images and PDFs pass through as vision content; text files are inlined into the prompt.
+3. Calls `chatStream()` from `lib/ai/` which handles DB persistence and LLM invocation. Two paths: SDK adapter (in-process, e.g. Claude Agent SDK) or direct headless container (other agents).
+4. Streams response chunks (text deltas, tool calls, tool results, thinking blocks) via `createUIMessageStream`. Tool call/tool result pairs and `{ type: 'error' }` chunks are persisted as JSON message parts.
+5. After the first user message streams, the client calls `/chat/finalize-chat` to generate the auto-title (helper LLM with truncated-description fallback).
 
 ## Server Actions (actions.js)
 

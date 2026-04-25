@@ -34,7 +34,6 @@ Files in managed directories are auto-synced (created, updated, **and deleted**)
 - `.github/workflows/` — CI/CD workflows
 - `docker-compose.yml`, `.dockerignore` — Docker config
 - `.gitignore` — Git ignore rules
-- `CLAUDE.md` — AI assistant context
 
 ## Directory Structure
 
@@ -46,7 +45,7 @@ Files in managed directories are auto-synced (created, updated, **and deleted**)
 │   ├── cron.js                 # Cron scheduler (loads CRONS.json)
 │   ├── triggers.js             # Webhook trigger middleware (loads TRIGGERS.json)
 │   ├── paths.js                # Exports PROJECT_ROOT (process.cwd())
-│   ├── ai/                     # LLM integration (agent, model, tools, streaming)
+│   ├── ai/                     # LLM integration (chat stream, SDK adapters, helper LLM, session manager, scope, system prompt)
 │   ├── auth/                   # NextAuth config, helpers, middleware, server actions, components
 │   ├── channels/               # Channel adapters (base class, Telegram, factory)
 │   ├── chat/                   # Chat route handler, server actions, React UI components
@@ -54,7 +53,7 @@ Files in managed directories are auto-synced (created, updated, **and deleted**)
 │   ├── code/                   # Code workspaces (server actions, terminal view, WebSocket proxy)
 │   ├── containers/             # Container SSE streaming (Docker container status)
 │   ├── db/                     # SQLite via Drizzle (schema, migrations, api-keys)
-│   ├── tools/                  # Job creation, GitHub API, Telegram, Docker, Whisper
+│   ├── tools/                  # Job creation, GitHub API, Telegram, Docker, AssemblyAI
 │   ├── voice/                  # Voice input (AssemblyAI streaming transcription)
 │   └── utils/
 │       └── render-md.js        # Markdown {{include}} processor
@@ -105,7 +104,7 @@ SQLite via Drizzle ORM at `data/thepopebot.sqlite` (override with `DATABASE_PATH
 
 **Browser UI uses fetch route handlers colocated with pages.** All authenticated browser-to-server calls use Next.js route handlers (`route.js` files in `web/app/`) that check `auth()` session. Do NOT use server actions for data fetching — they cause page refresh issues. Handler implementations live in `lib/chat/api.js`; route files are thin re-exports.
 
-**`/stream/*` is for actual SSE streaming only.** Three endpoints use Server-Sent Events: `/stream/chat` (AI SDK streaming), `/stream/containers` (Docker container status), `/stream/cluster/[clusterId]/logs` (cluster logs). All other fetch routes are colocated with their page directories.
+**`/stream/*` is for actual SSE streaming only.** Four endpoints use Server-Sent Events: `/stream/chat` (AI SDK streaming), `/stream/containers` (Docker container status), `/stream/containers/logs?name=<container>` (live container log tail), `/stream/cluster/[clusterId]/logs` (cluster logs). All other fetch routes are colocated with their page directories.
 
 | Caller | Mechanism | Auth | Location |
 |--------|-----------|------|----------|
@@ -138,9 +137,8 @@ Config markdown files support `{{ filepath.md }}` includes (resolved relative to
 
 ## Config Variable Architecture
 
-`LLM_MODEL` and `LLM_PROVIDER` exist in two separate systems using the same names:
+Runtime config lives in the **settings DB** (`lib/db/settings`), not `.env`. The event handler reads via `getConfig(key)` and writes via the admin UI or `setup/lib/sync.mjs` during initial setup. `.env` only carries bootstrap values that must exist before the DB is available (e.g. `AUTH_SECRET`, `DATABASE_PATH`).
 
-- **`.env`** — read by the event handler (chat). Set by `setup/lib/sync.mjs`.
-- **GitHub repository variables** — read by agent job containers. Set by `setup/lib/sync.mjs`.
+**Agent-job containers** are launched locally by the event handler (`runAgentJobContainer` in `lib/tools/docker.js`). Their env vars are built at launch time from settings DB values via `buildAgentAuthEnv()` plus per-job parameters (`LLM_MODEL`, `SCOPE`, `AGENT_JOB_TOKEN`, `APP_URL`, etc.). Agent jobs do **not** consume GitHub repository variables at runtime.
 
-These are independent environments. They use the same variable names. They can hold different values (e.g. chat uses sonnet, jobs use opus). Do NOT create separate `AGENT_LLM_*` variable names — just set different values in `.env` vs GitHub variables.
+`setup/lib/sync.mjs` may still write certain values to GitHub repo variables/secrets (for CI workflows like the npm publish pipeline), but those are separate from the runtime config path used by chat and agent jobs.

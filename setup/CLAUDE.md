@@ -4,12 +4,18 @@ Entry point: `setup.mjs` (invoked via `thepopebot setup`).
 
 ## Wizard Steps
 
-1. **Prerequisites** — Checks Node.js (>=18), git, gh CLI (authenticated), Docker. Initializes git repo and GitHub remote if needed.
-2. **GitHub PAT** — Validates fine-grained token with required scopes (Actions, Admin, Contents, PRs, Secrets, Workflows).
-3. **App URL** — Prompts for public HTTPS URL (ngrok, VPS, PaaS). Generates webhook secret.
-4. **Sync Config** — Writes secrets/variables to GitHub and local DB via `syncConfig()`.
-5. **Build** — Runs `npm run build` with retry.
+1. **Load `.env`** — `dotenv.config()` runs first so existing values are available to subsequent steps.
+2. **Prerequisites** — Checks Node.js (>=18), git, gh CLI (authenticated), Docker. Initializes git repo and GitHub remote if needed.
+3. **GitHub PAT** — Validates fine-grained token with required scopes (Actions, Admin, Contents, PRs, Secrets, Workflows).
+4. **App URL** — Prompts for public HTTPS URL (ngrok, VPS, PaaS). Generates webhook secret.
+5. **Sync Config** — Writes secrets/variables to GitHub and local DB via `syncConfig()`.
 6. **Start Server** — Starts Docker containers, polls `/api/ping` to confirm.
+
+The setup wizard does NOT run `npm run build` — `.next` is baked into the event-handler Docker image at publish time.
+
+## Database
+
+Settings DB defaults to `data/db/thepopebot.sqlite` (relative to project root). Override via `DATABASE_PATH` in `.env`. Schema migrations run automatically on server start (`lib/db/index.js`).
 
 ## Sync Target Types
 
