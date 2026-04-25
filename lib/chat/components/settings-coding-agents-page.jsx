@@ -91,12 +91,12 @@ function DefaultAgentSection({ settings, onReload }) {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-base font-medium">Default Coding Agent</h2>
+        <h2 className="text-base font-medium">Coding Agent</h2>
         <p className="text-sm text-muted-foreground">Select which coding agent runs headless tasks and code workspaces.</p>
       </div>
       <div className="rounded-lg border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium shrink-0">Agent</label>
+          <label className="text-sm font-medium shrink-0">Default Coding Agent</label>
           <div className="flex items-center gap-3">
             {saving && <span className="text-xs text-muted-foreground">Saving...</span>}
             {saved && <span className="text-xs text-green-500 inline-flex items-center gap-1"><CheckIcon size={12} /> Saved</span>}
