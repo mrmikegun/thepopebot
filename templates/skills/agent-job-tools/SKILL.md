@@ -1,6 +1,6 @@
 ---
 name: agent-job-tools
-description: Use when you need to access agent secrets, API keys, or create and manage background jobs. Supports listing keys and retrieving values, with OAuth credentials auto-refreshed. Also handles requests to "create a background job," "spawn a job," or "kick off an agent job."
+description: Use when you need to access agent secrets, API keys, or create and manage background jobs. Supports listing api keys, OAuth credentials (auto-refreshed). Also handles requests to "create a background job," "spawn a job," or "kick off an agent job."
 ---
 
 ## Usage
