@@ -389,6 +389,11 @@ export function GitHubVariablesPage() {
         onAdd={handleUpdate}
         onCancel={() => setShowAdd(false)}
       />
+      {data.variablesError && (
+        <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          Couldn't read GitHub variables: {data.variablesError}. Statuses below may be inaccurate. Check that the GitHub PAT has Variables: Read scope.
+        </div>
+      )}
       <div className="rounded-lg border bg-card p-4">
         <div className="divide-y divide-border">
           {data.variables.map((v) => (

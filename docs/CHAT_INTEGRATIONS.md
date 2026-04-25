@@ -17,15 +17,11 @@ The web chat interface is included out of the box at your APP_URL. No additional
 
 ### Telegram (Optional)
 
-Connect a Telegram bot to chat with your agent on the go:
+Connect a Telegram bot to chat with your agent on the go. Configure at `/admin/event-handler/telegram` — paste your bot token, click **Register webhook**. Each user then verifies their personal chat at `/profile/telegram` via a one-time code.
 
-```bash
-npm run setup-telegram
-```
+Once connected, message your bot directly to chat or create jobs. Supports text, voice messages (transcribed via AssemblyAI when an `ASSEMBLYAI_API_KEY` is set in `/admin/event-handler/voice`), photos, and documents.
 
-The setup wizard configures your bot token, webhook, and chat ID. Once connected, message your bot directly to chat or create jobs. Supports text, voice messages (transcribed via OpenAI Whisper), photos, and documents.
-
-See [Configuration](CONFIGURATION.md) for manual Telegram setup instructions.
+Slash commands: `/verify <code>` (link your account), `/session` (list active threads), `/session <id>` (switch threads).
 
 ---
 

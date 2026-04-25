@@ -8,7 +8,6 @@ Entry point: `cli.js` (invoked via `npx thepopebot <command>`).
 |---------|---------|
 | `init [--no-managed] [--no-install]` | Scaffold project from templates, sync managed files, create `.env`, install deps |
 | `setup` | Run interactive setup wizard (see `setup/CLAUDE.md`) |
-| `setup-telegram` | Reconfigure Telegram webhook |
 | `setup-ssl` | Configure SSL with Let's Encrypt wildcard cert |
 | `upgrade [@beta\|version]` | Upgrade package, run init, rebuild, commit, push, restart Docker |
 | `reset [file]` | Restore a template file to defaults |

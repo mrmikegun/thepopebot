@@ -53,7 +53,6 @@ Commands:
   upgrade|update [@beta|version]    Upgrade thepopebot (install, init, build, commit, push)
   setup                             Run interactive setup wizard
   setup-ssl                         Configure SSL with Let's Encrypt wildcard cert
-  setup-telegram                    Reconfigure Telegram webhook
   reset-auth                        Regenerate AUTH_SECRET (invalidates all sessions)
   reset [file]                      Restore a template file (or list available templates)
   reset-all                         Nuclear reset — restore entire project to fresh init state
@@ -256,7 +255,6 @@ async function init(options = {}) {
       type: 'module',
       scripts: {
         setup: 'thepopebot setup',
-        'setup-telegram': 'thepopebot setup-telegram',
         'reset-auth': 'thepopebot reset-auth',
       },
       dependencies: {
@@ -783,15 +781,6 @@ function setupSsl() {
   }
 }
 
-function setupTelegram() {
-  const setupScript = path.join(__dirname, '..', 'setup', 'setup-telegram.mjs');
-  try {
-    execFileSync(process.execPath, [setupScript], { stdio: 'inherit', cwd: process.cwd() });
-  } catch {
-    process.exit(1);
-  }
-}
-
 async function resetAuth() {
   const { randomBytes } = await import('crypto');
   const { updateEnvVariable } = await import(path.join(__dirname, '..', 'setup', 'lib', 'auth.mjs'));
@@ -1065,9 +1054,6 @@ switch (command) {
     break;
   case 'setup-ssl':
     setupSsl();
-    break;
-  case 'setup-telegram':
-    setupTelegram();
     break;
   case 'reset-auth':
     await resetAuth();

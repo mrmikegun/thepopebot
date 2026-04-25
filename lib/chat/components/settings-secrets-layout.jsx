@@ -60,7 +60,6 @@ const EVENT_HANDLER_TABS = [
 
 const GITHUB_TABS = [
   { id: 'tokens', label: 'Tokens', href: '/admin/github/tokens' },
-  { id: 'secrets', label: 'Secrets', href: '/admin/github/secrets' },
   { id: 'variables', label: 'Variables', href: '/admin/github/variables' },
 ];
 

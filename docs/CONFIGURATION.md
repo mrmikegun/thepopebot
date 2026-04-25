@@ -139,4 +139,4 @@ If your public URL changes:
 1. Update `APP_URL` and `APP_HOSTNAME` in `.env`
 2. Update the GitHub repository variable: `npx thepopebot set-var APP_URL <url>`
 3. Restart Docker: `docker compose up -d`
-4. If Telegram is configured, re-register the webhook: `npm run setup-telegram`
+4. If Telegram is configured, click **Re-register webhook** at `/admin/event-handler/telegram`

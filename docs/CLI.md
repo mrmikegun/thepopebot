@@ -79,7 +79,6 @@ All commands are run via `npx thepopebot <command>` (or the `npm run` shortcuts 
 |---------|-------------|
 | `init` | Scaffold a new project, or update templates in an existing one |
 | `setup` | Run the full interactive setup wizard (`npm run setup`) |
-| `setup-telegram` | Reconfigure the Telegram webhook (`npm run setup-telegram`) |
 | `reset-auth` | Regenerate AUTH_SECRET, invalidating all sessions |
 
 **Templates:**

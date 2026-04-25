@@ -47,18 +47,14 @@ The web chat is available out of the box after setup — no additional configura
 
 ### Telegram Chat (Optional)
 
-Connect a Telegram bot to chat with your agent on the go. Set up with:
-
-```bash
-npm run setup-telegram
-```
+Connect a Telegram bot to chat with your agent on the go. Set up at `/admin/event-handler/telegram` — paste your bot token, click **Register webhook**, then verify your personal chat at `/profile/telegram`.
 
 The bot uses your LLM to understand requests and can:
 
 - **Chat** — Have a conversation, ask questions, get information
 - **Create jobs** — Say "create a job to..." and the bot will spawn an autonomous agent
 
-**Security:** During setup, you'll verify your chat ID. Once configured, the bot only responds to messages from your authorized chat and ignores everyone else.
+**Security:** Per-user verification — each user links their own Telegram chat with a one-time code. The bot only responds to verified users.
 
 #### Voice Messages
 
