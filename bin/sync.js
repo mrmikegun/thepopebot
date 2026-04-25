@@ -248,6 +248,19 @@ function mirrorTemplates(projectPath) {
   }
 }
 
+/**
+ * Build thepopebot-base locally so the event-handler Dockerfile's
+ * `FROM ${BASE_IMAGE}` (default: thepopebot-base) resolves. Cached layers
+ * make this near-instant when nothing in docker/base changed.
+ */
+function buildBaseImage() {
+  console.log('\n  Building thepopebot-base image...');
+  const baseContext = path.join(PACKAGE_DIR, 'docker', 'base');
+  execSync(`docker build -t thepopebot-base -f ${path.join(baseContext, 'Dockerfile')} ${baseContext}`, {
+    stdio: 'inherit',
+  });
+}
+
 function buildDockerImage(projectPath) {
   console.log('\n  Building Docker event handler image...');
 
@@ -431,7 +444,11 @@ export async function sync(projectPath) {
     console.log('\n  Installing package on host...');
     execSync(`npm install --no-save ${tarballDest}`, { stdio: 'inherit', cwd: projectPath });
 
-    // 5. Build Docker image with patched Dockerfile (includes Next.js build)
+    // 5. Build thepopebot-base (event-handler Dockerfile FROMs it).
+    //    Cached layers — fast unless docker/base/Dockerfile changed.
+    buildBaseImage();
+
+    // 6. Build event-handler image with patched Dockerfile (includes Next.js build)
     buildDockerImage(projectPath);
 
     // 6. Restart container with new image
