@@ -36,6 +36,6 @@ Calls Docker Engine API directly through `/var/run/docker.sock` using Node's `ht
 
 **Typing indicator with jitter**: Re-sends typing action at 5.5–8s random intervals (Telegram expires indicators after 5s). Returns a stop function.
 
-## openai.js — Whisper Transcription
+## assemblyai.js — Voice Transcription
 
-**Feature flag via API key**: `isWhisperEnabled()` checks if `OPENAI_API_KEY` is set. Used by the Telegram adapter to conditionally offer voice transcription. `transcribeAudio()` sends binary audio via FormData to `/v1/audio/transcriptions`.
+**Feature flag via API key**: `isAssemblyAIEnabled()` checks if `ASSEMBLYAI_API_KEY` is set. Used by the Telegram adapter to conditionally offer voice transcription. `transcribeAudio(buffer)` uses the official `assemblyai` SDK (`client.transcripts.transcribe`), which handles upload + polling internally. Throws when the transcript status is `'error'`.

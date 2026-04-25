@@ -8,8 +8,8 @@ Admin pages live under `/admin/` with two top-level sections:
 
 - **`/admin/event-handler/`** — Event handler config with pill-style sub-tabs via `SubTabLayout` (`settings-secrets-layout.jsx`):
   - `/admin/event-handler/llms` — LLM provider credentials
-  - `/admin/event-handler/chat` — Chat LLM settings
   - `/admin/event-handler/coding-agents` — Multi-agent config (5 backends)
+  - `/admin/event-handler/helper-llm` — Helper LLM settings (provider/model used for chat titles, agent-job titles + summaries)
   - `/admin/event-handler/jobs` — Agent job custom secrets
   - `/admin/event-handler/telegram` — Telegram integration
   - `/admin/event-handler/voice` — Voice input (AssemblyAI)

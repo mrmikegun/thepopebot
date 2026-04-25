@@ -17,7 +17,7 @@ Abstract interface for platform integrations. Methods:
 **Critical distinction**: Audio is preprocessed at the adapter layer. Images are passed through to the LLM.
 
 - **Images** (`message.photo`) → Downloaded, passed as `{ category: 'image', mimeType, data: Buffer }` attachment → LLM receives as vision content
-- **Audio** (`message.voice`/`message.audio`) → Transcribed via Whisper → merged into `text` field → **never passed as attachment**
+- **Audio** (`message.voice`/`message.audio`) → Transcribed via AssemblyAI → merged into `text` field → **never passed as attachment**
 - **Documents** (`message.document`) → Downloaded as `{ category: 'document', mimeType, data: Buffer }`
 
 ## Factory (index.js) — Lazy Singleton

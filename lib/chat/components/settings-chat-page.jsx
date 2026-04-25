@@ -16,10 +16,14 @@ import {
 } from '../actions.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Configuration sub-tab (auto-save)
+// Helper LLM page (auto-save)
+//
+// Picks the provider + model used for short background generations: chat
+// titles, agent-job titles, and agent-job summaries. Independent of the
+// coding agent. Credentials live at /admin/event-handler/llms.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function ChatConfigPage() {
+export function HelperLlmPage() {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,28 +56,20 @@ export function ChatConfigPage() {
     return <p className="text-sm text-destructive">{settings.error}</p>;
   }
 
-  const sdkAgentActive = settings?.sdkAgentActive;
-  const defaultAgent = settings?.defaultAgent;
-
   return (
     <div>
-      {sdkAgentActive && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 mb-4">
-          <p className="text-sm text-destructive">
-            {defaultAgent} manages its own LLM directly. These settings only apply when using a coding agent without built-in SDK support.
-          </p>
-        </div>
-      )}
       <div className="mb-4">
-        <h2 className="text-base font-medium">Configuration</h2>
-        <p className="text-sm text-muted-foreground">Select the LLM provider and model for chat. Only providers with configured API keys appear in the dropdown.</p>
+        <h2 className="text-base font-medium">Helper LLM</h2>
+        <p className="text-sm text-muted-foreground">Used for chat titles, agent-job titles, and agent-job summaries. Independent of your coding agent. Only providers with configured API keys appear in the dropdown — set keys at <a href="/admin/event-handler/llms" className="underline hover:text-foreground">Providers</a>.</p>
       </div>
-      <div className={sdkAgentActive ? 'opacity-50 pointer-events-none' : ''}>
-        <ActiveConfig settings={settings} onSave={handleSaveActive} />
-      </div>
+      <ActiveConfig settings={settings} onSave={handleSaveActive} />
     </div>
   );
 }
+
+// Backwards-compat alias — kept so route files importing the old name keep working
+// during the route move.
+export const ChatConfigPage = HelperLlmPage;
 
 function ActiveConfig({ settings, onSave }) {
   const [provider, setProvider] = useState('');
@@ -777,5 +773,5 @@ function CustomProviderDialog({ open, initial, onSave, onCancel }) {
 
 // Backwards compat
 export function SettingsChatPage() {
-  return <ChatConfigPage />;
+  return <HelperLlmPage />;
 }

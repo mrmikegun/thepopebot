@@ -46,11 +46,30 @@ The "job" sub-mode is no longer wired — a skill will replace autonomous job di
 
 On the first message in a new chat, `chatStream` yields a visible `tool-call`/`tool-result` pair with `toolName: 'workspace'` so the setup appears in the UI.
 
-## Utility LLM Calls
+## Helper LLM (`helper-llm.js`)
 
-`createModel()` in `model.js` remains LangChain-based for two utility calls: `autoTitle()` (2-5 word chat title on first message) and `summarizeAgentJob()` (webhook-triggered PR merge summary). These use `LLM_PROVIDER` + `LLM_MODEL` configured via `/admin/event-handler/chat`.
+Small one-shot completions used by the event handler itself. Independent of the coding agent — it has its own provider/model selection at `/admin/event-handler/helper-llm`.
 
-Phase 2 will replace `createModel()` with a tiny fetch-based multi-provider client (or route utility calls through the active coding agent's credentials) and drop the remaining `@langchain/*` dependencies.
+**Callers:**
+- `autoTitle()` (chat title — 2-5 word title for "New Chat")
+- `summarizeAgentJob()` (webhook-triggered PR merge summary)
+- `generateAgentJobTitle()` (~10 word title for an agent job)
+
+**API:**
+- `callHelperLlm({system, user, maxTokens})` → returns trimmed text (uses AI SDK `generateText`)
+- `callHelperLlmStructured({system, user, schema, maxTokens})` → returns parsed object (uses AI SDK `generateObject`); throws on schema/parse failure (callers catch and fall back)
+
+**Provider resolution.** Reads `LLM_PROVIDER` and `LLM_MODEL` from config and builds the right AI SDK adapter:
+
+| Provider slug | AI SDK adapter |
+|---|---|
+| `anthropic` | `@ai-sdk/anthropic` |
+| `openai` | `@ai-sdk/openai` |
+| `google` | `@ai-sdk/google` |
+| built-in OpenAI-compatible (`deepseek`, `mistral`, `xai`, `kimi`, `openrouter`, `nvidia`) | `@ai-sdk/openai-compatible` with each provider's `baseUrl` from `BUILTIN_PROVIDERS` |
+| custom user-added | `@ai-sdk/openai-compatible` with the custom provider's `baseUrl` and `apiKey` |
+
+The AI SDK handles per-provider quirks (max-token param naming, thinking/reasoning block stripping, structured output via the right native mechanism per provider). Helper LLM has no LangChain dependency.
 
 ### LLM Providers
 
@@ -70,9 +89,7 @@ Source of truth: `lib/llm-providers.js` (`BUILTIN_PROVIDERS`).
 
 All credentials are stored in the settings DB (encrypted). `LLM_MAX_TOKENS` defaults to 4096.
 
-**Custom providers**: users can add OpenAI-compatible providers via `/admin/event-handler/llms`. Stored as `type: 'llm_provider'` in the settings table. Resolved in `model.js` via `getCustomProvider()`.
-
-> **Google model compatibility note:** `gemini-2.5-pro` and `gemini-3.*` require `thought_signature` round-tripping that `@langchain/google-genai` doesn't support. Auto-falls back to `gemini-2.5-flash` (issue #201).
+**Custom providers**: users can add OpenAI-compatible providers via `/admin/event-handler/llms`. Stored as `type: 'llm_provider'` in the settings table. Resolved at call time via `getCustomProvider()` in `helper-llm.js`.
 
 ## Headless Stream Parser (headless-stream.js)
 
