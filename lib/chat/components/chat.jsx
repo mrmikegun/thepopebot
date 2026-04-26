@@ -409,54 +409,13 @@ export function Chat({ chatId, initialMessages = [], workspace = null, chatMode 
           </div>
         </div>
       ) : (
-        <div className="flex flex-1 flex-col min-h-0 overflow-hidden relative">
-          {showDiff && workspaceState?.id && (
-            <div className="absolute inset-0 z-10 bg-black/50" />
-          )}
+        <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
           {showDiff && workspaceState?.id ? (
-            <>
-              <div className="flex-1 min-h-0 z-20 p-0 md:p-4 flex flex-col">
-                <DiffViewer
-                  workspaceId={workspaceState.id}
-                  diffStats={diffStats}
-                  onClose={() => setShowDiff(false)}
-                />
-              </div>
-              <div className="z-20 px-4 pb-4">
-                <div className="mx-auto w-full max-w-4xl">
-                  {workspaceState && (
-                    <div className="rounded-t-xl border border-b-0 border-border px-3 py-2.5 bg-background">
-                      <WorkspaceBar
-                        repo={repo}
-                        branch={branch}
-                        onBranchChange={handleBranchChange}
-                        getBranches={fetchBranches}
-                        workspace={workspaceState}
-                        diffStats={diffStats}
-                        onDiffStatsRefresh={handleDiffStatsRefresh}
-                        onShowDiff={() => setShowDiff(true)}
-                        chatMode={codeMode ? 'code' : 'agent'}
-                      />
-                    </div>
-                  )}
-                  <ChatInput
-                    bare
-                    input={input}
-                    setInput={setInput}
-                    onSubmit={handleSend}
-                    status={status}
-                    stop={stop}
-                    files={files}
-                    setFiles={setFiles}
-                    disabled={isInteractiveActive}
-                    placeholder={isInteractiveActive ? 'Interactive mode is active.' : defaultPlaceholder}
-                    className={workspaceState ? "rounded-t-none" : undefined}
-                    codeMode={codeMode}
-                    codeModeSettings={codeModeSettings}
-                  />
-                </div>
-              </div>
-            </>
+            <DiffViewer
+              workspaceId={workspaceState.id}
+              diffStats={diffStats}
+              onClose={() => setShowDiff(false)}
+            />
           ) : (
             <>
               <Messages messages={messages} status={status} onRetry={handleRetry} onEdit={handleEdit} />

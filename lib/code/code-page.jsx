@@ -310,7 +310,8 @@ export default function CodePage({ session, codeWorkspaceId }) {
           <div className="flex h-svh flex-col overflow-hidden">
             <ChatHeader workspaceId={codeWorkspaceId} />
 
-            {/* Tab bar */}
+            {/* Tab bar — hidden while diff viewer is open so it fills the content area */}
+            {!showDiff && (
             <div className="flex items-end gap-0 px-4 bg-muted/30 border-b border-border shrink-0 overflow-x-auto scrollbar-hide">
               {/* Primary Code tab — pinned, not draggable */}
               <PinnedTab
@@ -429,6 +430,7 @@ export default function CodePage({ session, codeWorkspaceId }) {
                 + Port
               </button>
             </div>
+            )}
 
             {/* Tab content panels — all mounted, hidden via display */}
             <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
