@@ -590,7 +590,7 @@ function OAuthSecretRow({ secret, onReauthorize, onDelete }) {
 // Jobs page
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function JobsPage() {
+export function JobSecretsManager({ showHeader = true }) {
   const [secrets, setSecrets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -635,12 +635,24 @@ export function JobsPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="min-w-0">
-          <h2 className="text-base font-medium">Job Secrets</h2>
-          <p className="text-sm text-muted-foreground">Custom environment variables passed to agent job containers. These are merged with built-in auth credentials when launching jobs.</p>
+      {showHeader ? (
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-medium">Job Secrets</h2>
+            <p className="text-sm text-muted-foreground">Custom environment variables passed to agent job containers. These are merged with built-in auth credentials when launching jobs.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 pt-0.5">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-foreground text-background hover:bg-foreground/90 shrink-0 transition-colors"
+            >
+              <PlusIcon size={14} />
+              Add secret
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0 pt-0.5">
+      ) : (
+        <div className="flex items-center justify-end mb-4">
           <button
             onClick={() => setShowAdd(true)}
             className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-foreground text-background hover:bg-foreground/90 shrink-0 transition-colors"
@@ -649,7 +661,7 @@ export function JobsPage() {
             Add secret
           </button>
         </div>
-      </div>
+      )}
       <AddSecretDialog
         open={showAdd}
         onAdd={handleAdd}
@@ -695,4 +707,8 @@ export function JobsPage() {
       )}
     </div>
   );
+}
+
+export function JobsPage() {
+  return <JobSecretsManager />;
 }

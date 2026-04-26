@@ -1,11 +1,13 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { SendIcon, StopIcon, PaperclipIcon, XIcon, FileTextIcon, MicIcon } from './icons.js';
+import { SendIcon, StopIcon, PaperclipIcon, XIcon, FileTextIcon, MicIcon, KeyIcon } from './icons.js';
 import { useVoiceInput } from '../../voice/use-voice-input.js';
 const getVoiceTokenFetch = () =>
   fetch('/chat/voice-token').then(r => r.json()).catch(() => ({ error: 'Failed to get voice token' }));
 import { VoiceBars } from './voice-bars.jsx';
+import { Dialog } from './settings-shared.js';
+import { JobSecretsManager } from './settings-jobs-page.js';
 import { cn } from '../utils.js';
 
 const ACCEPTED_TYPES = [
@@ -48,6 +50,7 @@ export function ChatInput({ input, setInput, onSubmit, status, stop, files, setF
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
   const [agentPickerOpen, setAgentPickerOpen] = useState(false);
   const [partialText, setPartialText] = useState('');
+  const [secretsOpen, setSecretsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const agentPickerRef = useRef(null);
   const isStreaming = status === 'streaming' || status === 'submitted';
@@ -311,6 +314,19 @@ export function ChatInput({ input, setInput, onSubmit, status, stop, files, setF
                 </div>
               )}
 
+              {!codeMode && (
+                <button
+                  type="button"
+                  onClick={() => setSecretsOpen(true)}
+                  className="inline-flex items-center justify-center rounded-lg p-2.5 text-muted-foreground hover:text-foreground"
+                  aria-label="Manage agent job secrets"
+                  title="Manage agent job secrets"
+                  disabled={isStreaming}
+                >
+                  <KeyIcon size={16} />
+                </button>
+              )}
+
               {/* Interactive toggle — left-click to launch with default agent,
                   right-click to pick a specific agent (when multiple are available) */}
               {codeModeSettings && !codeModeSettings.isInteractiveActive && (
@@ -433,10 +449,22 @@ export function ChatInput({ input, setInput, onSubmit, status, stop, files, setF
     </form>
   );
 
-  if (bare) return formContent;
+  const secretsDialog = !codeMode ? (
+    <Dialog
+      open={secretsOpen}
+      onClose={() => setSecretsOpen(false)}
+      title="Agent Job Secrets"
+      maxWidth="max-w-2xl"
+    >
+      <JobSecretsManager showHeader={false} />
+    </Dialog>
+  ) : null;
+
+  if (bare) return <>{formContent}{secretsDialog}</>;
   return (
     <div className="mx-auto w-full max-w-4xl px-1.5 pb-[max(1rem,var(--safe-area-bottom))] md:px-6">
       {formContent}
+      {secretsDialog}
     </div>
   );
 }

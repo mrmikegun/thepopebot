@@ -116,8 +116,9 @@ async function handleGetAgentSecret(request) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const key = new URL(request.url).searchParams.get('key');
-  if (!key) return Response.json({ error: 'Missing key' }, { status: 400 });
+  const rawKey = new URL(request.url).searchParams.get('key');
+  if (!rawKey) return Response.json({ error: 'Missing key' }, { status: 400 });
+  const key = rawKey.toUpperCase();
 
   const { getAgentJobSecretRaw, setAgentJobSecret: saveSecret } = await import('../lib/db/config.js');
   const raw = getAgentJobSecretRaw(key);

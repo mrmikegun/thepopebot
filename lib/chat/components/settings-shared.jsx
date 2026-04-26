@@ -289,7 +289,7 @@ export function VariableRow({ name, isSet, currentValue, onUpdate, onDelete }) {
 // Dialog — standardized modal
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function Dialog({ open, onClose, title, children }) {
+export function Dialog({ open, onClose, title, children, maxWidth = 'max-w-md' }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -306,7 +306,7 @@ export function Dialog({ open, onClose, title, children }) {
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div
         ref={ref}
-        className="relative z-50 w-full max-w-md mx-4 rounded-lg border border-border bg-background p-6 shadow-lg"
+        className={`relative z-50 w-full ${maxWidth} mx-4 rounded-lg border border-border bg-background p-6 shadow-lg max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-base font-semibold mb-4">{title}</h3>
