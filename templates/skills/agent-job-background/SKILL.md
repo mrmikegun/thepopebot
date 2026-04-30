@@ -30,4 +30,5 @@ If the calling agent is running with a `SCOPE` env var set, `create` defaults th
 
 ## Notes
 
-- `AGENT_JOB_TOKEN` and `APP_URL` are injected automatically — no setup required.
+- `AGENT_JOB_TOKEN`, `APP_URL`, and `USER_ID` are injected automatically — no setup required.
+- The spawned job inherits `USER_ID` from the env if set, so it's attributed to the same originator as this chat/job.

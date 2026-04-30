@@ -59,6 +59,7 @@ if (subcommand === 'create') {
   if (opts.llm_model) body.llm_model = opts.llm_model;
   if (opts.agent_backend) body.agent_backend = opts.agent_backend;
   if (opts.scope) body.scope = opts.scope;
+  if (process.env.USER_ID) body.user_id = process.env.USER_ID;
 
   const json = await httpJson('POST', '/api/create-agent-job', body);
   console.log(JSON.stringify(json, null, 2));

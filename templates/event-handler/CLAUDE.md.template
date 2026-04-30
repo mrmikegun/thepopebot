@@ -38,15 +38,17 @@ JSON array of webhook trigger definitions. Loaded at server boot by `lib/trigger
 
 ### Action types
 
-Three types — `agent`, `command`, `webhook`. `agent` accepts optional `scope`, `agent_backend`, `llm_model` overrides:
+Three types — `agent`, `command`, `webhook`. `agent` accepts optional `scope`, `agent_backend`, `llm_model`, `user_id` overrides:
 
 ```json
-{ "type": "agent", "job": "Process: {{body}}", "scope": "agents/triage", "agent_backend": "claude-code", "llm_model": "claude-sonnet-4-5-20250929" }
+{ "type": "agent", "job": "Process: {{body}}", "scope": "agents/triage", "agent_backend": "claude-code", "llm_model": "claude-sonnet-4-5-20250929", "user_id": "<uuid>" }
 { "type": "command", "command": "echo 'webhook received: {{body}}' >> logs/webhook.log" }
 { "type": "webhook", "url": "https://example.com/hook", "method": "POST", "headers": {}, "vars": { "source": "github" } }
 ```
 
 `scope` resolves to a directory under `agents/` (see `agents/CLAUDE.md`). The agent runs with that directory as its working dir, picks up its `SYSTEM.md`, and uses the skills under `agents/<scope>/skills/` falling back to root `skills/`.
+
+`user_id` attributes the spawned job to a specific user — its completion DM routes to that user's inbox. Omit to broadcast the completion to subscribed admins.
 
 ### Template tokens (in `job` and `command` strings)
 
