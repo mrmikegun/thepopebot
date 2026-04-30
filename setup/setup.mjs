@@ -292,7 +292,8 @@ async function main() {
       '  Contents: Read and write\n' +
       '  Metadata: Read-only (required, auto-selected)\n' +
       '  Pull requests: Read and write\n' +
-      '  Secrets: Read and write (required for managing agent secrets from UI)\n' +
+      '  Secrets: Read and write\n' +
+      '  Variables: Read and write\n' +
       '  Workflows: Read and write'
     );
 
