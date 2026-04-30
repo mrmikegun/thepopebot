@@ -38,17 +38,20 @@ JSON array of webhook trigger definitions. Loaded at server boot by `lib/trigger
 
 ### Action types
 
-Three types — `agent`, `command`, `webhook`. `agent` accepts optional `scope`, `agent_backend`, `llm_model`, `user_id` overrides:
+Three types — `agent`, `command`, `webhook`:
 
 ```json
-{ "type": "agent", "job": "Process: {{body}}", "scope": "agents/triage", "agent_backend": "claude-code", "llm_model": "claude-sonnet-4-5-20250929", "user_id": "<uuid>" }
+{ "type": "agent", "scope": "agents/triage", "job": "Process: {{body}}" }
 { "type": "command", "command": "echo 'webhook received: {{body}}' >> logs/webhook.log" }
 { "type": "webhook", "url": "https://example.com/hook", "method": "POST", "headers": {}, "vars": { "source": "github" } }
 ```
 
-`scope` resolves to a directory under `agents/` (see `agents/CLAUDE.md`). The agent runs with that directory as its working dir, picks up its `SYSTEM.md`, and uses the skills under `agents/<scope>/skills/` falling back to root `skills/`.
+#### Optional fields on `agent` actions
 
-`user_id` attributes the spawned job to a specific user — its completion DM routes to that user's inbox. Omit to broadcast the completion to subscribed admins.
+- **`"scope"`** *(recommended)* — e.g. `"agents/triage"`. Routes the action to a **scoped agent** under `agents/<name>/`. Its `SYSTEM.md`, skills directory, and working directory all switch to that subdirectory. Scoping is technically optional (an action without `scope` runs from the repo root using the default `agent-job/SYSTEM.md`), but in practice you almost always want a scoped agent so each trigger has a clearly-defined identity, prompt, and skill set. See `agents/CLAUDE.md` for the full pattern.
+- **`"user_id"`** *(optional, usually omitted)* — attribute the spawned job's completion to a specific user. After the resulting PR merges, the system message ("job done", PR link, summary) lands in that user's inbox. **If omitted (the default), the completion broadcasts to every admin subscribed to system messages** — which is the right behavior for triggers that no one person owns (e.g., generic webhook handlers). Set it only when a particular user should receive the result. Find user ids in Admin > Users.
+- `"agent_backend"` (e.g. `"claude-code"`, `"codex-cli"`, `"gemini-cli"`, `"pi"`, `"opencode"`, `"kimi-cli"`) — pick which coding agent runs the action, overriding the default set in Admin > Event Handler > Coding Agents.
+- `"llm_model"` — override the model used within the selected coding agent (provider is implicit in the agent).
 
 ### Template tokens (in `job` and `command` strings)
 

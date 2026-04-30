@@ -18,19 +18,22 @@ There are three action types:
 
 ```json
 {
-  "name": "heartbeat",
-  "schedule": "*/30 * * * *",
+  "name": "weekly-report",
+  "schedule": "0 9 * * 1",
   "type": "agent",
-  "job": "Read agent-job/HEARTBEAT.md and complete the tasks described there.",
+  "scope": "agents/reporter",
+  "job": "Generate the weekly report and open a PR.",
+  "user_id": "57e959ab-d288-4623-8cda-829c995b7251",
   "enabled": false
 }
 ```
 
 Optional fields:
-- `"scope"` (e.g. `"agents/my-agent"`) — routes the cron to a scoped agent. Its `SYSTEM.md`, skills directory, and working directory all switch to that subdirectory. See `agents/CLAUDE.md` for the full pattern.
+
+- **`"scope"`** *(recommended)* — e.g. `"agents/my-agent"`. Routes the cron to a **scoped agent** under `agents/<name>/`. Its `SYSTEM.md`, skills directory, and working directory all switch to that subdirectory. Scoping is technically optional (a cron without `scope` runs from the repo root using the default `agent-job/SYSTEM.md`), but in practice you almost always want a scoped agent so the job has a clearly-defined identity, prompt, and skill set. See `agents/CLAUDE.md` for the full pattern.
+- **`"user_id"`** *(optional, usually omitted)* — attribute the cron's completion to a specific user. After the resulting PR merges, the system message ("job done", PR link, summary) lands in that user's inbox. **If omitted (the default), the completion broadcasts to every admin subscribed to system messages** — which is the right behavior for ops/maintenance crons that no one person owns. Set it only when a particular user should be the recipient (e.g., a personal assistant cron, or a team report owned by one person). Find user ids in Admin > Users.
 - `"agent_backend"` (e.g. `"claude-code"`, `"codex-cli"`, `"gemini-cli"`, `"pi"`, `"opencode"`, `"kimi-cli"`) — pick which coding agent runs the job, overriding the default set in Admin > Event Handler > Coding Agents.
 - `"llm_model"` — override the model used within the selected coding agent (provider is implicit in the agent).
-- `"user_id"` — attribute the job to a specific user. The completion DM (after PR merge) routes to that user's inbox. If omitted, the completion broadcasts to every admin subscribed to system messages.
 
 **`command`** — Runs a shell command on the event handler (working directory: project root).
 
