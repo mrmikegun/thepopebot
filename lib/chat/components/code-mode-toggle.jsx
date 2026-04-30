@@ -208,9 +208,28 @@ export function WorkspaceBar({
 }) {
   const [branches, setBranches] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
+  const branchesLoadedRef = useRef(false);
 
   const featureBranch = workspace?.featureBranch;
   const repoName = repo ? repo.split('/').pop() : '';
+
+  // Pin the current branch and the repo's default branch to the top of the
+  // dropdown so the user can always re-select them, even if the API list
+  // omits them (very large repos hit pagination caps; deleted branches; etc.).
+  const branchOptions = (() => {
+    const seen = new Set();
+    const out = [];
+    const push = (name) => {
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      out.push({ value: name, label: name });
+    };
+    push(branch);
+    const defaultBranch = branches.find((b) => b.isDefault)?.name;
+    push(defaultBranch);
+    for (const b of branches) push(b.name);
+    return out;
+  })();
 
   return (
     <div className="flex items-center gap-2 text-xs min-w-0 px-1 py-0.5">
@@ -222,16 +241,17 @@ export function WorkspaceBar({
             <span className="shrink-0 text-muted-foreground/30 hidden md:inline">/</span>
             <div className="min-w-0">
               <Combobox
-                options={branches.map((b) => ({ value: b.name, label: b.name }))}
+                options={branchOptions}
                 value={branch}
                 onChange={onBranchChange}
                 loading={loadingBranches}
                 side="top"
                 onOpen={() => {
-                  if (!loadingBranches && repo) {
+                  if (!loadingBranches && repo && !branchesLoadedRef.current) {
                     setLoadingBranches(true);
                     getBranches(repo).then((data) => {
                       setBranches(data || []);
+                      branchesLoadedRef.current = true;
                     }).catch(() => {
                       setBranches([]);
                     }).finally(() => setLoadingBranches(false));
