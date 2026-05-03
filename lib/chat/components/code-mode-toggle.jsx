@@ -235,7 +235,17 @@ export function WorkspaceBar({
     <div className="flex items-center gap-2 text-xs min-w-0 px-1 py-0.5">
       <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
         <GitBranchIcon size={12} className="shrink-0" />
-        {repoName && <span className="shrink-0 cursor-default hidden md:inline" title={repo}>{repoName}</span>}
+        {repoName && (
+          <a
+            href={`https://github.com/${repo}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={repo}
+            className="shrink-0 hidden md:inline font-medium text-foreground hover:text-primary transition-colors"
+          >
+            {repoName}
+          </a>
+        )}
         {branch && (
           <>
             <span className="shrink-0 text-muted-foreground/30 hidden md:inline">/</span>
