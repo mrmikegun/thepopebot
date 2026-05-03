@@ -61,6 +61,7 @@ The coding agent must be enabled in the admin UI before an override can select i
 | xAI | `xai` | `grok-4.20-0309-non-reasoning` | `XAI_API_KEY` |
 | Kimi | `kimi` | `kimi-k2.5` | `MOONSHOT_API_KEY` |
 | OpenRouter | `openrouter` | (user-specified) | `OPENROUTER_API_KEY` |
+| NVIDIA | `nvidia` | (user-specified) | `NVIDIA_API_KEY` |
 | Custom | (user-defined) | (user-defined) | (user-defined) |
 
 **Provider notes:**

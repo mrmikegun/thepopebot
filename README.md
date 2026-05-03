@@ -5,7 +5,7 @@ one app. Works with any LLM or coding agent. Designed to be simple, unified,
 secure, and easy.
 
 - 💬 **Smart chat integrations** — Telegram today; Slack and Discord coming soon. Plus the built-in web chat.
-- 🧠 **Any LLM** — Anthropic, OpenAI, Google, DeepSeek, MiniMax, Mistral, xAI, Kimi, OpenRouter, or any OpenAI-compatible endpoint.
+- 🧠 **Any LLM** — Anthropic, OpenAI, Google, DeepSeek, MiniMax, Mistral, xAI, Kimi, OpenRouter, NVIDIA, or any OpenAI-compatible endpoint.
 - 🤖 **Any coding agent** — Claude Code, Codex, Gemini, OpenCode, Pi, or Kimi.
 - 💻 **Live coding workspaces** — open a terminal in your browser, attach to a running container, share the same session as your chat.
 - 🔧 **Real work, not just chat** — agent writes code, opens a PR, auto-merges, DMs you when it's done.
@@ -28,7 +28,7 @@ Three doors, one brain:
       │  attach    │           The Brain              │
       │  a live    │     (your event handler)         │
       │  terminal  │                                  │
-      │            │   • picks the LLM                │
+      │            │   • picks the coding agent       │
       │            │   • picks the coding agent       │
       │            │   • remembers the session        │
       │            │   • runs Docker for you          │
@@ -41,10 +41,12 @@ Three doors, one brain:
                   │  Live chat  │   │   Agent job     │
                   │ (right now) │   │  (background)   │
                   │             │   │                 │
-                  │ answers,    │   │ writes code,    │
-                  │ small edits │   │ opens a PR,     │
-                  │ live tools  │   │ auto-merges,    │
-                  │             │   │ DMs you back    │
+                  │ same coding │   │ same coding     │
+                  │ agent runs  │   │ agent runs in   │
+                  │ in-process  │   │ a fresh Docker  │
+                  │ or in a     │   │ container,      │
+                  │ headless    │   │ opens a PR,     │
+                  │ container   │   │ DMs you back    │
                   └─────────────┘   └─────────────────┘
 ```
 
@@ -162,33 +164,48 @@ Use them when release notes mention a SYSTEM.md or workflow improvement you want
 
 ---
 
-## Chat LLM vs Agent LLM
+## How LLMs are wired
 
-Two layers, two LLMs (you choose whether they're the same).
+Two slots, you pick whether they share a model.
 
-- **Chat LLM** — answers in the browser/Telegram in real time, runs in-process on your event handler.
-- **Agent LLM** — drives the coding agent inside Docker containers running locally on the same host. This is the LLM that writes your code.
+- **Coding agent** — drives **everything you actually talk to**: live chat in the browser/Telegram, code workspaces, and background agent jobs. One agent, one model. For Claude Code the chat runs in-process via the Claude Agent SDK; for any other agent (Pi, Codex, Gemini, OpenCode, Kimi) it runs in an ephemeral headless container — same chunk shape either way. Configured at `/admin/event-handler/coding-agents`.
+- **Helper LLM** — small one-shot calls only: chat auto-titles, agent-job titles, PR-merge summaries. Independent provider/model from the coding agent. Configured at `/admin/event-handler/helper-llm`.
 
-Same model for both, or split — fast model for chat, capable model for agent jobs. The setup wizard offers the split.
+A coding-agent task can override its model per-run via `agent_backend` + `llm_model` on a cron, trigger, or chained agent job.
 
 ### Using a Claude subscription
 
-If you have Claude Pro or Max, you can power agent jobs through your subscription instead of API billing. Generate a token:
+If you have Claude Pro or Max, you can power Claude Code with your subscription instead of API billing. Generate a token:
 
 ```bash
 npm install -g @anthropic-ai/claude-code
 claude setup-token
 ```
 
-Paste it (starts with `sk-ant-oat01-`) into the setup wizard. Usage counts toward your Claude.ai limits; you still need an API key for the chat side.
+Paste it (starts with `sk-ant-oat01-`) into Admin > Event Handler > Coding Agents > Claude Code (auth mode: OAuth). The same token drives live chat *and* background agent jobs — no separate API key needed for chat. Add multiple tokens and they rotate LRU on each container launch.
 
 See [Coding Agents](docs/CODING_AGENTS.md) for details on all six agent backends.
 
 ---
 
+## Connect Telegram (optional)
+
+Talk to your bot from your phone. Two steps:
+
+1. **Wire up the bot** — at `/admin/event-handler/telegram`, paste the bot token from [@BotFather](https://t.me/BotFather) and click **Register webhook**.
+2. **Verify your account** — at `/profile/telegram`, generate a one-time code and send `/verify <code>` to your bot. The bot only responds to verified users; unbound chats are silently dropped.
+
+Once verified: `/session` lists your active threads, `/session <id>` switches the thread your messages route to. Voice notes are transcribed when an `ASSEMBLYAI_API_KEY` is set in `/admin/event-handler/voice`.
+
+See [Chat Integrations](docs/CHAT_INTEGRATIONS.md) for the channel adapter pattern and how to add new channels (Slack, Discord coming soon).
+
+---
+
 ## Security
 
-thepopebot includes API key authentication, webhook secret validation (fail-closed), session encryption (AES-256-GCM keyed off `AUTH_SECRET`), per-job API keys with maintenance-cron expiry, and auto-merge path restrictions. All software carries risk — thepopebot is provided as-is, and you are responsible for securing your own infrastructure. If you're running locally with a tunnel, your dev server endpoints are publicly accessible with no rate limiting and no TLS on the local hop. Always set webhook secrets and an API key before exposing the server, and stop tunnels when you're done.
+thepopebot includes API key authentication, webhook secret validation (fail-closed), session encryption (AES-256-GCM keyed off `AUTH_SECRET`), per-job API keys with maintenance-cron expiry, and auto-merge path restrictions. All software carries risk — thepopebot is provided as-is, and you are responsible for securing your own infrastructure. If you're running locally with a tunnel, your dev server endpoints are publicly accessible with no rate limiting and no TLS on the local hop.
+
+See [Security](docs/SECURITY.md) for full details.
 
 ---
 
@@ -218,7 +235,7 @@ SQLite can't create or open its shared-memory (`.shm`) file. Common causes:
 | [Configuration](docs/CONFIGURATION.md) | Admin UI, DB-backed config, infrastructure variables, Docker Compose |
 | [Customization](docs/CUSTOMIZATION.md) | Personality, skills, operating system files, using your bot |
 | [Chat Integrations](docs/CHAT_INTEGRATIONS.md) | Web chat, Telegram, adding new channels |
-| [Different Models](docs/RUNNING_DIFFERENT_MODELS.md) | 9 built-in LLM providers, chat vs coding agent config, per-job overrides, custom providers |
+| [Different Models](docs/RUNNING_DIFFERENT_MODELS.md) | 10 built-in LLM providers, helper LLM vs coding agent split, per-job overrides, custom providers |
 | [Auto-Merge](docs/AUTO_MERGE.md) | Auto-merge controls, ALLOWED_PATHS configuration |
 | [Deployment](docs/DEPLOYMENT.md) | VPS setup, Docker Compose, HTTPS with Let's Encrypt |
 | [Coding Agents](docs/CODING_AGENTS.md) | 6 coding agent backends, OAuth tokens, LiteLLM proxy, per-agent config |
@@ -228,6 +245,7 @@ SQLite can't create or open its shared-memory (`.shm`) file. Common causes:
 | [Clusters](docs/CLUSTERS.md) | Agent clusters — groups of Docker containers spawned from role definitions |
 | [Hacks](docs/HACKS.md) | Tips, tricks, and workarounds |
 | [Mobile Testing](docs/MOBILE_TESTING.md) | Testing on mobile devices |
+| [Security](docs/SECURITY.md) | Security disclaimer, local development risks |
 | [Upgrading](docs/UPGRADE.md) | Automated upgrades, recovering from failed upgrades |
 
 ### Maintainer

@@ -435,24 +435,33 @@ async function main() {
   // ─── Step 5: Start Server ─────────────────────────────────────────────
   clack.log.step(`[${++currentStep}/${TOTAL_STEPS}] Start Server`);
 
-  let serverRunning = false;
-  try {
-    await fetch('http://localhost:80/api/ping', {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-    serverRunning = true;
-  } catch {
-    // Server not reachable
+  // Probe /login (not /api/ping) to confirm Next.js can actually render
+  // the page, not just answer API routes. /login serves SetupForm on a
+  // fresh install; LoginForm once a user exists. Either way it's HTML.
+  async function isLoginPageReady(timeoutMs = 2000) {
+    try {
+      const res = await fetch('http://localhost:80/login', {
+        method: 'GET',
+        signal: AbortSignal.timeout(timeoutMs),
+        redirect: 'manual',
+      });
+      if (!res.ok) return false;
+      const ct = res.headers.get('content-type') || '';
+      return ct.includes('text/html');
+    } catch {
+      return false;
+    }
   }
 
-  if (serverRunning) {
+  let serverUp = await isLoginPageReady(3000);
+
+  if (serverUp) {
     if (await confirm('Server is already running. Restart?')) {
       clack.log.info('Restarting server...');
       try {
         execSync('docker compose down && docker compose up -d', { stdio: 'inherit' });
         clack.log.success('Server restarted');
-        serverRunning = false; // Need to wait for it to come back up
+        serverUp = false; // Need to wait for it to come back up
       } catch (err) {
         const output = (err.stderr || err.stdout || err.message || '').toString().trim();
         clack.log.warn('Failed to restart.');
@@ -474,32 +483,25 @@ async function main() {
   }
 
   // Poll for the server to come up (max 60 seconds)
-  if (!serverRunning) {
+  if (!serverUp) {
     const pollSpinner = clack.spinner();
     pollSpinner.start('Waiting for server to come up...');
 
     const startTime = Date.now();
     const timeout = 60_000;
-    let detected = false;
 
     while (Date.now() - startTime < timeout) {
-      try {
-        await fetch('http://localhost:80/api/ping', {
-          method: 'GET',
-          signal: AbortSignal.timeout(2000),
-        });
-        detected = true;
+      if (await isLoginPageReady()) {
+        serverUp = true;
         break;
-      } catch {
-        await new Promise((r) => setTimeout(r, 2000));
       }
+      await new Promise((r) => setTimeout(r, 2000));
     }
 
-    if (detected) {
+    if (serverUp) {
       pollSpinner.stop('Server is up!');
     } else {
       pollSpinner.stop('Could not detect the server after 60 seconds.');
-      clack.log.warn(`Check docker logs and visit ${appUrl}/admin manually to finish setup.`);
     }
   }
 
@@ -512,18 +514,23 @@ async function main() {
 
   clack.note(summary, 'Configuration');
 
-  clack.log.info('Configure your LLM provider, API keys, and agent settings in /admin.');
+  // Only offer the link once the server is actually serving the login page.
+  // /admin would 401 — a fresh install has no users yet, so the root sends
+  // them to /login where the first-user setup form is shown.
+  if (serverUp) {
+    clack.log.info('Create your admin account, then configure your LLM provider, API keys, and agent settings under Admin.');
 
-  // Offer to open /admin in browser
-  const adminUrl = `${appUrl}/admin`;
-  if (canOpenBrowser()) {
-    const open = (await import('open')).default;
-    const shouldOpen = await confirm(`Open ${adminUrl} in your browser?`, true);
-    if (shouldOpen) {
-      await open(adminUrl);
+    if (canOpenBrowser()) {
+      const open = (await import('open')).default;
+      const shouldOpen = await confirm(`Open ${appUrl} in your browser?`, true);
+      if (shouldOpen) {
+        await open(appUrl);
+      }
+    } else {
+      clack.log.info(`Visit ${appUrl} to create your admin account.`);
     }
   } else {
-    clack.log.info(`Visit ${adminUrl} to finish setup.`);
+    clack.log.warn(`Server didn't respond. Check docker logs, then visit ${appUrl} to create your admin account.`);
   }
 
   clack.outro('Setup complete!');
