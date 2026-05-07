@@ -95,6 +95,8 @@ the agent already knows what you were just talking about.
 
 ## Install
 
+> ### 📺 [**Install Video (click here)**](https://youtu.be/xmxEEAXFtm8)
+
 ### Prerequisites
 
 | Requirement | Install |
