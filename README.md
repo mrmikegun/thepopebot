@@ -109,10 +109,17 @@ the agent already knows what you were just talking about.
 
 ### Two steps
 
+**1. Scaffold the project.**
+
 ```bash
 mkdir my-agent && cd my-agent
-npx thepopebot@latest init   # scaffold project
-npm run setup                 # interactive wizard
+npx thepopebot@latest init
+```
+
+**2. Run the interactive setup wizard.**
+
+```bash
+npm run setup
 ```
 
 The wizard checks prerequisites, creates a GitHub repo, generates a PAT, configures your URL, and starts Docker. Visit your APP_URL when it finishes.
