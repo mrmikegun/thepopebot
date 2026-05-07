@@ -97,7 +97,7 @@ the agent already knows what you were just talking about.
 
 Prefer to follow along on video? 👇
 
-> ### 📺 [**Install Video (click here)**](https://youtu.be/xmxEEAXFtm8)
+> ### 📺 <a href="https://youtu.be/xmxEEAXFtm8" target="_blank" rel="noopener"><strong>Install Video (click here)</strong></a>
 
 ### Prerequisites
 
