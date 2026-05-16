@@ -1,8 +1,11 @@
-name: Rebuild Event Handler
-
 on:
+  workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'event-handler/**'
+      - 'package.json'
+      - 'package-lock.json'
 
 concurrency:
   group: event-handler-deploy
