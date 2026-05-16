@@ -1,8 +1,11 @@
-name: Rebuild Event Handler
-
 on:
+  workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'event-handler/**'
+      - 'package.json'
+      - 'package-lock.json'
 
 concurrency:
   group: event-handler-deploy
@@ -74,7 +77,7 @@ jobs:
           HOST_DIR=$(docker inspect thepopebot-event-handler --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}')
           COMPOSE_FILE=$(grep "^COMPOSE_FILE=" /project/.env | cut -d= -f2- || true)
           COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
-          docker compose -f "/project/$COMPOSE_FILE" --project-directory "$HOST_DIR" --env-file /project/.env pull event-handler
+          docker compose -f "/project/$COMPOSE_FILE" --project-directory "$HOST_DIR" --env-file "/project/.env" pull event-handler
           docker stop thepopebot-event-handler || true
           docker rm thepopebot-event-handler || true
-          docker compose -f "/project/$COMPOSE_FILE" --project-directory "$HOST_DIR" --env-file /project/.env up -d event-handler
+          docker compose -f "/project/$COMPOSE_FILE" --project-directory "$HOST_DIR" --env-file "/project/.env" up -d event-handler
